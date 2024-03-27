@@ -1,0 +1,9 @@
+{
+    "files.associations": {
+        "opencv.hpp": "c",
+        "chrono": "cpp"
+    },
+    "cmake.sourceDirectory": "${workspaceFolder}/sudoku_scanner/dev",
+    "cmake.buildDirectory": "${workspaceFolder}/sudoku_scanner/dev/build",
+    "cmake.configureOnOpen": false
+}
