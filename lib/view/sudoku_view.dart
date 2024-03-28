@@ -19,6 +19,7 @@ class SudokuView extends StatefulWidget {
 
 /// A widget that only displays the extracted sudoku grid (not interactable).
 class _SudokuViewState extends State<SudokuView> {
+  final _buttonForegroundColor = Colors.white;
   final _buttonPrimaryColor = const Color.fromARGB(255, 102, 102, 102);
   final sudokuGrid = SudokuGrid();
   late Future<void> sudokuGridFuture;
@@ -83,6 +84,7 @@ class _SudokuViewState extends State<SudokuView> {
   Widget _getTopBar(double height, double width, double offset) {
     final buttonStyle = ElevatedButton.styleFrom(
       elevation: 5,
+      foregroundColor: _buttonForegroundColor,
       backgroundColor: _buttonPrimaryColor,
       shadowColor: Colors.black,
     );
@@ -207,6 +209,7 @@ class _SudokuViewState extends State<SudokuView> {
               return ElevatedButton(
                 style: ElevatedButton.styleFrom(
                   elevation: 5,
+                  foregroundColor: _buttonForegroundColor,
                   backgroundColor: _buttonPrimaryColor,
                   shadowColor: Colors.black,
                 ),

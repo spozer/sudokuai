@@ -8,6 +8,137 @@
 // ignore_for_file: type=lint
 import 'dart:ffi' as ffi;
 
+/// Bindings for `src/sudoku_scanner.hpp`.
+///
+/// Regenerate bindings with `flutter pub run ffigen --config ffigen.yaml`.
+///
+class SudokuScannerBindings {
+  /// Holds the symbol lookup function.
+  final ffi.Pointer<T> Function<T extends ffi.NativeType>(String symbolName)
+      _lookup;
+
+  /// The symbols are looked up in [dynamicLibrary].
+  SudokuScannerBindings(ffi.DynamicLibrary dynamicLibrary)
+      : _lookup = dynamicLibrary.lookup;
+
+  /// The symbols are looked up with [lookup].
+  SudokuScannerBindings.fromLookup(
+      ffi.Pointer<T> Function<T extends ffi.NativeType>(String symbolName)
+          lookup)
+      : _lookup = lookup;
+
+  ffi.Pointer<BoundingBox> detect_grid(
+    ffi.Pointer<ffi.Char> path,
+  ) {
+    return _detect_grid(
+      path,
+    );
+  }
+
+  late final _detect_gridPtr = _lookup<
+      ffi.NativeFunction<
+          ffi.Pointer<BoundingBox> Function(
+              ffi.Pointer<ffi.Char>)>>('detect_grid');
+  late final _detect_grid = _detect_gridPtr
+      .asFunction<ffi.Pointer<BoundingBox> Function(ffi.Pointer<ffi.Char>)>();
+
+  ffi.Pointer<ffi.Int> extract_grid(
+    ffi.Pointer<ffi.Char> path,
+    ffi.Pointer<BoundingBox> bounding_box,
+  ) {
+    return _extract_grid(
+      path,
+      bounding_box,
+    );
+  }
+
+  late final _extract_gridPtr = _lookup<
+      ffi.NativeFunction<
+          ffi.Pointer<ffi.Int> Function(ffi.Pointer<ffi.Char>,
+              ffi.Pointer<BoundingBox>)>>('extract_grid');
+  late final _extract_grid = _extract_gridPtr.asFunction<
+      ffi.Pointer<ffi.Int> Function(
+          ffi.Pointer<ffi.Char>, ffi.Pointer<BoundingBox>)>();
+
+  ffi.Pointer<ffi.Int> extract_grid_from_roi(
+    ffi.Pointer<ffi.Char> path,
+    int roi_size,
+    int roi_offset,
+  ) {
+    return _extract_grid_from_roi(
+      path,
+      roi_size,
+      roi_offset,
+    );
+  }
+
+  late final _extract_grid_from_roiPtr = _lookup<
+      ffi.NativeFunction<
+          ffi.Pointer<ffi.Int> Function(ffi.Pointer<ffi.Char>, ffi.Int,
+              ffi.Int)>>('extract_grid_from_roi');
+  late final _extract_grid_from_roi = _extract_grid_from_roiPtr.asFunction<
+      ffi.Pointer<ffi.Int> Function(ffi.Pointer<ffi.Char>, int, int)>();
+
+  bool debug_grid_detection(
+    ffi.Pointer<ffi.Char> path,
+  ) {
+    return _debug_grid_detection(
+      path,
+    );
+  }
+
+  late final _debug_grid_detectionPtr =
+      _lookup<ffi.NativeFunction<ffi.Bool Function(ffi.Pointer<ffi.Char>)>>(
+          'debug_grid_detection');
+  late final _debug_grid_detection = _debug_grid_detectionPtr
+      .asFunction<bool Function(ffi.Pointer<ffi.Char>)>();
+
+  bool debug_grid_extraction(
+    ffi.Pointer<ffi.Char> path,
+    ffi.Pointer<BoundingBox> bounding_box,
+  ) {
+    return _debug_grid_extraction(
+      path,
+      bounding_box,
+    );
+  }
+
+  late final _debug_grid_extractionPtr = _lookup<
+      ffi.NativeFunction<
+          ffi.Bool Function(ffi.Pointer<ffi.Char>,
+              ffi.Pointer<BoundingBox>)>>('debug_grid_extraction');
+  late final _debug_grid_extraction = _debug_grid_extractionPtr.asFunction<
+      bool Function(ffi.Pointer<ffi.Char>, ffi.Pointer<BoundingBox>)>();
+
+  void set_model(
+    ffi.Pointer<ffi.Char> path,
+  ) {
+    return _set_model(
+      path,
+    );
+  }
+
+  late final _set_modelPtr =
+      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Pointer<ffi.Char>)>>(
+          'set_model');
+  late final _set_model =
+      _set_modelPtr.asFunction<void Function(ffi.Pointer<ffi.Char>)>();
+
+  void free_pointer(
+    ffi.Pointer<ffi.Int> pointer,
+  ) {
+    return _free_pointer(
+      pointer,
+    );
+  }
+
+  late final _free_pointerPtr =
+      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Pointer<ffi.Int>)>>(
+          'free_pointer');
+  late final _free_pointer =
+      _free_pointerPtr.asFunction<void Function(ffi.Pointer<ffi.Int>)>();
+}
+
 final class Offset extends ffi.Struct {
   @ffi.Double()
   external double x;

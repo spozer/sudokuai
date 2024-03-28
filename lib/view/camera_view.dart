@@ -9,15 +9,16 @@ import 'package:permission_handler/permission_handler.dart';
 
 /// The main widget for taking pictures.
 class CameraView extends StatefulWidget {
-  final void Function(String imagePath, {int? roiSize, int? roiOffset}) scanImage;
+  final void Function(String imagePath, {int? roiSize, int? roiOffset})
+      scanImage;
 
   const CameraView({super.key, required this.scanImage});
 
   @override
-  _CameraViewState createState() => _CameraViewState();
+  CameraViewState createState() => CameraViewState();
 }
 
-class _CameraViewState extends State<CameraView> with WidgetsBindingObserver {
+class CameraViewState extends State<CameraView> with WidgetsBindingObserver {
   CameraController? _controller;
   Future<void>? _initializeControllerFuture;
 
@@ -36,7 +37,7 @@ class _CameraViewState extends State<CameraView> with WidgetsBindingObserver {
   bool _wasFlashOn = false;
   // Keep in mind that _controller.value.isInitialized is not changed on
   // dispose of camera controller. So only use this to check if camera
-  // was initialized at least oncein the past. Use the following
+  // was initialized at least once in the past. Use the following
   // parameter to check the actual state.
   bool _isCameraInitialized = false;
   bool _isCameraAccessGranted = false;
@@ -49,7 +50,8 @@ class _CameraViewState extends State<CameraView> with WidgetsBindingObserver {
     // Get main back facing camera.
     camera = availableCameras().then((value) {
       return value.firstWhere(
-        (CameraDescription camera) => camera.lensDirection == CameraLensDirection.back,
+        (CameraDescription camera) =>
+            camera.lensDirection == CameraLensDirection.back,
       );
     });
 
@@ -209,7 +211,8 @@ class _CameraViewState extends State<CameraView> with WidgetsBindingObserver {
       await _initializeControllerFuture;
       _isCameraInitialized = true;
       // Set initial flash mode.
-      await _controller!.setFlashMode(flashOn ? FlashMode.torch : FlashMode.off);
+      await _controller!
+          .setFlashMode(flashOn ? FlashMode.torch : FlashMode.off);
       _isFlashOn = flashOn;
     } on CameraException catch (e) {
       // Ignore error, just move on.
@@ -248,7 +251,8 @@ class _CameraViewState extends State<CameraView> with WidgetsBindingObserver {
       builder: (context, snapshot) {
         // Future can have state 'done' even when finishing with errors, so
         // check actual state of camera too.
-        if (snapshot.connectionState == ConnectionState.done && _isCameraInitialized) {
+        if (snapshot.connectionState == ConnectionState.done &&
+            _isCameraInitialized) {
           // Get camera height and width in portrait orientation.
           final cameraWidth = _controller!.value.previewSize!.height;
           final cameraHeight = _controller!.value.previewSize!.width;
@@ -262,8 +266,10 @@ class _CameraViewState extends State<CameraView> with WidgetsBindingObserver {
           bool fitHeight = (widgetAspectRatio > cameraAspectRatio);
 
           // Save cropped size of preview, which is displayed in this widget.
-          _previewWidth = fitHeight ? cameraHeight / widgetAspectRatio : cameraWidth;
-          _previewHeight = fitHeight ? cameraHeight : cameraWidth * widgetAspectRatio;
+          _previewWidth =
+              fitHeight ? cameraHeight / widgetAspectRatio : cameraWidth;
+          _previewHeight =
+              fitHeight ? cameraHeight : cameraWidth * widgetAspectRatio;
 
           return SizedBox(
             width: width,
@@ -309,7 +315,9 @@ class _CameraViewState extends State<CameraView> with WidgetsBindingObserver {
               Align(
                 alignment: Alignment.center,
                 // Display loading indicator while taking a picture.
-                child: _isTakingPicture ? const CircularProgressIndicator() : Container(),
+                child: _isTakingPicture
+                    ? const CircularProgressIndicator()
+                    : Container(),
               ),
               Align(
                 alignment: Alignment.topLeft,
@@ -426,6 +434,8 @@ class _CameraViewState extends State<CameraView> with WidgetsBindingObserver {
               heroTag: "TakePictureButton",
               foregroundColor: Colors.grey,
               backgroundColor: Colors.white,
+              shape: const RoundedRectangleBorder(
+                  borderRadius: BorderRadius.all(Radius.circular(50))),
               onPressed: _onTakePictureButtonPressed,
               child: Icon(
                 Icons.circle,
@@ -454,11 +464,13 @@ class _CameraViewState extends State<CameraView> with WidgetsBindingObserver {
     if (!_isCameraInitialized || _isTakingPicture) return;
 
     try {
-      await _controller!.setFlashMode(_isFlashOn ? FlashMode.off : FlashMode.torch);
+      await _controller!
+          .setFlashMode(_isFlashOn ? FlashMode.off : FlashMode.torch);
       _isFlashOn = !_isFlashOn;
     } on CameraException catch (e) {
       // Ignore error, just do nothing.
-      debugPrint('Error in _onToggleFlashButtonPressed: $e.code\nError Message: $e.message');
+      debugPrint(
+          'Error in _onToggleFlashButtonPressed: $e.code\nError Message: $e.message');
     }
 
     if (mounted) setState(() {});
@@ -494,7 +506,8 @@ class _CameraViewState extends State<CameraView> with WidgetsBindingObserver {
       );
     } on CameraException catch (e) {
       // TODO: error handling when taking picture fails
-      debugPrint('Error in _onTakePictureButtonPressed: $e.code\nError Message: $e.message');
+      debugPrint(
+          'Error in _onTakePictureButtonPressed: $e.code\nError Message: $e.message');
       rethrow;
     }
   }
@@ -521,7 +534,8 @@ class _CameraViewState extends State<CameraView> with WidgetsBindingObserver {
       }
     } on PlatformException catch (e) {
       // TODO: error handling when picking image fails
-      debugPrint('Error in _onGalleryButtonPressed: $e.code\nError Message: $e.message');
+      debugPrint(
+          'Error in _onGalleryButtonPressed: $e.code\nError Message: $e.message');
       rethrow;
     }
   }
