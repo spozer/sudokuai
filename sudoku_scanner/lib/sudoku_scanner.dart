@@ -54,7 +54,7 @@ class SudokuScanner {
   }
 
   static void _freePointer(Pointer<Int32> pointer) {
-    _bindings.free_pointer(pointer.cast<Int>());
+    _bindings.free_pointer(pointer);
   }
 
   static Future<BoundingBox> detectGrid(String imagePath) async {
@@ -90,9 +90,8 @@ class SudokuScanner {
       ..bottom_right.x = boundingBox.bottomRight.dx
       ..bottom_right.y = boundingBox.bottomRight.dy;
 
-    Pointer<Int32> gridArray = _bindings
-        .extract_grid(imagePathPointer, nativeBoundingBoxPointer)
-        .cast<Int32>();
+    Pointer<Int32> gridArray =
+        _bindings.extract_grid(imagePathPointer, nativeBoundingBoxPointer);
 
     // It is not clear, whether asTypeList gets handled from GC or not:
     // https://github.com/dart-lang/ffi/issues/22

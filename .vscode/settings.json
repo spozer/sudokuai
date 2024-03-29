@@ -1,8 +1,17 @@
 {
     "files.associations": {
-        "opencv.hpp": "c",
-        "chrono": "cpp"
+        "opencv.hpp": "cpp",
+        "chrono": "cpp",
+        "cstdint": "cpp",
+        "cstdio": "cpp",
+        "*.tcc": "cpp",
+        "deque": "cpp",
+        "list": "cpp",
+        "string": "cpp",
+        "vector": "cpp",
+        "cstdlib": "cpp"
     },
+    "C_Cpp.clang_format_fallbackStyle": "{ BasedOnStyle: Google, IndentWidth: 4, ColumnLimit: 0 }",
     "cmake.sourceDirectory": "${workspaceFolder}/sudoku_scanner/dev",
     "cmake.buildDirectory": "${workspaceFolder}/sudoku_scanner/dev/build",
     "cmake.configureOnOpen": false

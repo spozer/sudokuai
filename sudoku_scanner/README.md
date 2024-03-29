@@ -11,6 +11,8 @@ TODO: nur libs importen von opencv die auch gebraucht werden (core imgprocs imgc
 TODO: tflite mit gpu delegates https://www.tensorflow.org/lite/android/delegates/gpu_native#java
 https://central.sonatype.com/artifact/org.tensorflow/tensorflow-lite-gpu/2.6.0/versions
 
+TODO: int32_t statt int benutzen oder sogar kleiner int8_t wo geht
+
 A new Flutter FFI plugin project.
 
 ## Getting Started

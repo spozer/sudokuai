@@ -1,6 +1,9 @@
 #include "grid_extractor.hpp"
+
+#include <opencv2/imgproc.hpp>
+#include <vector>
+
 #include "classification/number_classifier.hpp"
-#include <opencv2/opencv.hpp>
 
 std::vector<int> GridExtractor::extract_grid(cv::Mat &img, float x1, float y1, float x2, float y2, float x3, float y3, float x4, float y4) {
     cv::Mat transformed;
@@ -19,7 +22,7 @@ std::vector<int> GridExtractor::extract_grid(cv::Mat &img, float x1, float y1, f
 }
 
 cv::Mat GridExtractor::crop_and_transform(cv::Mat img, float x1, float y1, float x2, float y2, float x3, float y3, float x4, float y4) {
-    const int dst_size = 450; //img.size().width;
+    const int dst_size = 450;  // img.size().width;
     cv::Mat dst = cv::Mat::zeros(dst_size, dst_size, CV_8UC1);
     std::vector<cv::Point2f> dst_pts;
     std::vector<cv::Point2f> img_pts;
@@ -104,7 +107,7 @@ cv::Mat GridExtractor::add_border(cv::Mat &img, int size) {
 std::vector<int> GridExtractor::cells_to_array(std::vector<Cell> &cells) {
     std::vector<int> array(9 * 9, 0);
 
-    for (Cell &cell: cells) {
+    for (Cell &cell : cells) {
         array[cell.x + 9 * cell.y] = cell.number;
     }
 
@@ -112,7 +115,7 @@ std::vector<int> GridExtractor::cells_to_array(std::vector<Cell> &cells) {
 }
 
 void GridExtractor::extract_number(cv::Mat &img, std::vector<cv::Point> &output) {
-    const int threshold = 70; // min amount of points for number
+    const int threshold = 70;  // min amount of points for number
     int cell_size = img.size().width;
     int scan_size = cell_size / 5;
 

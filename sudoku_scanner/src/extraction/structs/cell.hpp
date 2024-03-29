@@ -1,7 +1,7 @@
 #ifndef CELL_HPP
 #define CELL_HPP
 
-#include <opencv2/opencv.hpp>
+#include <opencv2/core.hpp>
 
 struct Cell {
     const cv::Mat img;

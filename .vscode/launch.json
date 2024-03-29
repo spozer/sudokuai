@@ -32,7 +32,7 @@
             "program": "${command:cmake.launchTargetPath}",
             "args": [],
             "stopAtEntry": false,
-            "cwd": "${workspaceFolder}",
+            "cwd": "${workspaceFolder}/sudoku_scanner/dev/build",
             // "externalConsole": true,
             "MIMode": "gdb",
             "setupCommands": [

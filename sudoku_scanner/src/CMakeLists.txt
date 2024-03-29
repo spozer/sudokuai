@@ -15,7 +15,7 @@ add_library(sudoku_scanner SHARED
 )
 
 set_target_properties(sudoku_scanner PROPERTIES
-  PUBLIC_HEADER sudoku_scanner.hpp
+  PUBLIC_HEADER sudoku_scanner.h
   OUTPUT_NAME "sudoku_scanner"
 )
 

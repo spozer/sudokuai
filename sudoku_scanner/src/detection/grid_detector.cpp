@@ -1,6 +1,7 @@
 #include "grid_detector.hpp"
-#include <opencv2/imgproc/types_c.h>
-#include <opencv2/opencv.hpp>
+
+#include <opencv2/imgproc.hpp>
+#include <vector>
 
 std::vector<cv::Point> GridDetector::detect_grid(cv::Mat &img) {
     cv::Mat thresholded;
@@ -38,7 +39,6 @@ std::vector<cv::Point> GridDetector::get_max_rectangle(cv::Mat &hough_lines) {
         std::sort(contours.begin(), contours.end(), is_bigger);
 
         for (std::vector<cv::Point> &contour : contours) {
-
             if (cv::contourArea(contour) < (width * height) / 20) {
                 break;
             }

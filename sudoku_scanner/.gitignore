@@ -32,4 +32,5 @@ build/
 android/src/main/jniLibs/**
 assets/*
 dev/build/
+dev/images/**
 dev/libs/**

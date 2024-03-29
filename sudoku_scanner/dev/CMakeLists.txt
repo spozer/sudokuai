@@ -6,6 +6,8 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17")
 
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/../src" "${CMAKE_CURRENT_BINARY_DIR}/shared")
 
+target_compile_definitions(sudoku_scanner PRIVATE DEVMODE)
+
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../includes)
 
 # OpenCV

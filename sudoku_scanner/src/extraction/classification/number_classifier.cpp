@@ -7,6 +7,9 @@
 #endif
 #include <tensorflow/lite/c/c_api.h>
 
+#include <opencv2/imgproc.hpp>
+#include <vector>
+
 void NumberClassifier::predict_numbers(std::vector<Cell> &cells) {
     std::vector<float> input;
     std::vector<float> output = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};

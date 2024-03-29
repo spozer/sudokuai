@@ -1,13 +1,14 @@
 #ifndef GRID_DETECTOR_HPP
 #define GRID_DETECTOR_HPP
 
-#include <opencv2/opencv.hpp>
+#include <opencv2/core.hpp>
+#include <vector>
 
 class GridDetector {
-  public:
+   public:
     static std::vector<cv::Point> detect_grid(cv::Mat &img);
 
-  private:
+   private:
     GridDetector() = delete;
     static void sort_rectangle(std::vector<cv::Point> &rectangle);
     static std::vector<cv::Point> get_max_rectangle(cv::Mat &hough_lines);
