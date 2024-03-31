@@ -1,5 +1,6 @@
 #include "sudoku_scanner.h"
 
+#include <cassert>
 #include <cstdlib>
 #include <opencv2/imgcodecs.hpp>
 #include <opencv2/imgproc.hpp>

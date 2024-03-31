@@ -66,11 +66,7 @@ class _ScannerViewState extends State<ScannerView> {
     final touchBubbleSize = screenHeight * 0.04;
 
     return PopScope(
-      onPopInvoked: (didPop) async {
-        if (didPop) {
-          widget.onBack();
-        }
-      },
+      canPop: false,
       child: Scaffold(
         body: Stack(
           children: <Widget>[

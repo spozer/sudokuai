@@ -13,6 +13,10 @@ https://central.sonatype.com/artifact/org.tensorflow/tensorflow-lite-gpu/2.6.0/v
 
 TODO: int32_t statt int benutzen oder sogar kleiner int8_t wo geht
 
+TODO: const wo geht (vorallem in functions parameter)
+
+TODO: manchmal werden 1er als leeres Feld erkannt (siehe z.B. maz*.jpg)
+
 A new Flutter FFI plugin project.
 
 ## Getting Started

@@ -1,14 +1,17 @@
 #include "number_classifier.hpp"
 
-#include "../../dictionary/dictionary.hpp"
-#include "../structs/cell.hpp"
-#ifdef __ANDROID__
-#include <android/log.h>
-#endif
 #include <tensorflow/lite/c/c_api.h>
 
 #include <opencv2/imgproc.hpp>
+#include <string>
 #include <vector>
+
+#include "../../dictionary/dictionary.hpp"
+#include "../structs/cell.hpp"
+
+#ifdef __ANDROID__
+#include <android/log.h>
+#endif
 
 void NumberClassifier::predict_numbers(std::vector<Cell> &cells) {
     std::vector<float> input;
@@ -51,8 +54,10 @@ void NumberClassifier::predict_numbers(std::vector<Cell> &cells) {
         cell.number = number;
 
 #ifdef __ANDROID__
+#ifndef NDEBUG
         std::string debug = "(" + std::to_string(cell.x) + ", " + std::to_string(cell.y) + ") " + std::to_string(number) + " [" + std::to_string(confidence) + "%]";
         __android_log_print(ANDROID_LOG_DEBUG, "predict_numbers", "%s", debug.c_str());
+#endif
 #endif
     }
 

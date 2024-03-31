@@ -2,15 +2,17 @@
 #include <tensorflow/lite/c/c_api.h>
 
 #include <cstdio>
+#include <memory>
 #include <opencv2/highgui.hpp>
 #include <opencv2/imgproc.hpp>
 
+#include "../src/detection/grid_detector.hpp"
 #include "../src/extraction/grid_extractor.hpp"
 #include "../src/sudoku_scanner.h"
 
-std::string IMAGE_PATH = "../images/maz1.jpg";
-std::string MODEL_PATH = "../../assets/model.tflite";
-int RESIZE_WIDTH = 480;
+const std::string IMAGE_PATH = "../images/maz4.jpg";
+const std::string MODEL_PATH = "../../assets/model.tflite";
+const int RESOLUTION = 480;
 
 void print_info() {
     printf("OpenCV %s\n", cv::getVersionString().c_str());
@@ -38,7 +40,7 @@ void print_info() {
     printf("\n\n");
 }
 
-void print_sudoku_grid(std::vector<int> &grid) {
+void print_sudoku_grid(const std::vector<int> &grid) {
     for (int i = 0; i < grid.size(); ++i) {
         if (i % 9 == 0) {
             printf("\n");
@@ -71,9 +73,7 @@ int main() {
     // init tflite model
     set_model((char *)MODEL_PATH.c_str());
 
-    cv::Size size(RESIZE_WIDTH, (static_cast<float>(image.size().height) / image.size().width) * RESIZE_WIDTH);
-    // std::cout << size << std::endl;
-    cv::resize(image, image, size);
+    GridDetector::resize_to_resolution(image, RESOLUTION);
 
     // bounding box
     std::unique_ptr<BoundingBox> bb(detect_grid((char *)IMAGE_PATH.c_str()));
@@ -101,7 +101,8 @@ int main() {
     std::vector<std::vector<cv::Point>> cont;
     cont.push_back(pts);
 
-    cv::polylines(image, cont, true, cv::Scalar(0, 255, 0));
+    cv::cvtColor(image, image, CV_GRAY2BGR);
+    cv::polylines(image, cont, true, cv::Scalar(0, 0, 255));
 
     cv::imshow("Image", image);
 
