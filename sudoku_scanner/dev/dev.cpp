@@ -10,7 +10,7 @@
 #include "../src/extraction/grid_extractor.hpp"
 #include "../src/sudoku_scanner.h"
 
-const std::string IMAGE_PATH = "../images/maz4.jpg";
+const std::string IMAGE_PATH = "../images/maz3.jpg";
 const std::string MODEL_PATH = "../../assets/model.tflite";
 const int RESOLUTION = 480;
 
@@ -98,13 +98,12 @@ int main() {
 
     print_sudoku_grid(grid);
 
-    std::vector<std::vector<cv::Point>> cont;
-    cont.push_back(pts);
+    cv::waitKey(0);
 
-    cv::cvtColor(image, image, CV_GRAY2BGR);
-    cv::polylines(image, cont, true, cv::Scalar(0, 0, 255));
+    std::unique_ptr<int> bbroi(extract_grid_from_roi((char *)IMAGE_PATH.c_str(), 2160, 0));
+    std::vector<int> grid2(bbroi.get(), bbroi.get() + 81);
 
-    cv::imshow("Image", image);
+    print_sudoku_grid(grid2);
 
     cv::waitKey(0);
 

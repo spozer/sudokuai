@@ -45,6 +45,7 @@ double GridDetector::calc_angle(cv::Point point0, cv::Point point1, cv::Point po
 }
 
 std::vector<cv::Point> GridDetector::detect_grid(cv::Mat &img) {
+    cv::Size original_size = img.size();
     resize_to_resolution(img, RESOLUTION);
     cv::cvtColor(img, img, cv::COLOR_BGR2GRAY);
 
@@ -61,13 +62,26 @@ std::vector<cv::Point> GridDetector::detect_grid(cv::Mat &img) {
         cv::imshow(name, thresholded);
 #endif
         if (has_squarelike) {
+#ifdef DEVMODE
+            cv::cvtColor(img, img, cv::COLOR_GRAY2BGR);
+            cv::polylines(img, std::vector{detection[0], detection[1], detection[3], detection[2]}, true, cv::Scalar(0, 0, 255));
+            cv::imshow("detection", img);
+#endif
+            // get points in original sized image
+            double scale_x = static_cast<double>(original_size.width) / img.size().width;
+            double scale_y = static_cast<double>(original_size.height) / img.size().height;
+
+            for (cv::Point &point : detection) {
+                point.x *= scale_x;
+                point.y *= scale_y;
+            }
+
             return detection;
         }
     }
 
     // no detection
-    cv::Size size = img.size();
-    return {cv::Point(0, 0), cv::Point(size.width - 1, 0), cv::Point(0, size.height - 1), cv::Point(size.width - 1, size.height - 1)};
+    return {cv::Point(0, 0), cv::Point(original_size.width - 1, 0), cv::Point(0, original_size.height - 1), cv::Point(original_size.width - 1, original_size.height - 1)};
 }
 
 void GridDetector::sort_rectangle(std::vector<cv::Point> &rectangle) {
@@ -84,8 +98,6 @@ void GridDetector::sort_rectangle(std::vector<cv::Point> &rectangle) {
 }
 
 bool GridDetector::find_max_area_squarelike(const cv::Mat &binary, std::vector<cv::Point> &result) {
-    int width = binary.size().width;
-    int height = binary.size().height;
     std::vector<std::vector<cv::Point>> contours;
     std::vector<std::vector<cv::Point>> squarelikes;
 
@@ -105,6 +117,7 @@ bool GridDetector::find_max_area_squarelike(const cv::Mat &binary, std::vector<c
 
         if (poly_approx.size() == 4 && cv::isContourConvex(poly_approx) && cv::contourArea(contour) > MIN_AREA) {
             // TODO: this method only good for extract_from_roi (could also be done with messuring angles to be ~90°)
+            // TODO: implement strict mode expection this method (parameter -> bool strict)
             /* this method of finding a rotated bounding box of the sudoku grid expects that
                 the image was not taken at an acute angle. In other words the sudoku grid is still
                 square-like from the image's perspective. */
@@ -160,6 +173,7 @@ bool GridDetector::find_max_area_squarelike(const cv::Mat &binary, std::vector<c
     return true;
 }
 
+// TODO: remove, not needed?
 cv::Mat GridDetector::get_hough_lines(cv::Mat &binary) {
     std::vector<cv::Vec4i> lines;
     cv::Mat hough_lines = cv::Mat::zeros(binary.size(), binary.type());

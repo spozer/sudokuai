@@ -9,9 +9,9 @@
 class GridExtractor {
    public:
     static std::vector<int> extract_grid(cv::Mat &img, float x1, float y1, float x2, float y2, float x3, float y3, float x4, float y4);
-    static cv::Mat crop_and_transform(cv::Mat img, float x1, float y1, float x2, float y2, float x3, float y3, float x4, float y4);  // public because of debug
-    static std::vector<Cell> extract_cells(cv::Mat &thresh, cv::Mat &img);                                                           // public because of debug
-    static cv::Mat stitch_cells(std::vector<Cell> &cells);                                                                           // debug
+    static void crop_and_transform(cv::Mat &img, float x1, float y1, float x2, float y2, float x3, float y3, float x4, float y4);  // public because of debug
+    static std::vector<Cell> extract_cells(cv::Mat &thresh, cv::Mat &img);                                                         // public because of debug
+    static cv::Mat stitch_cells(std::vector<Cell> &cells);                                                                         // debug
 
    private:
     GridExtractor() = delete;

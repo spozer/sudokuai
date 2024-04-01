@@ -5,32 +5,37 @@
 
 #include "classification/number_classifier.hpp"
 
+#ifdef DEVMODE
+#include <opencv2/highgui.hpp>
+#endif
+
 std::vector<int> GridExtractor::extract_grid(cv::Mat &img, float x1, float y1, float x2, float y2, float x3, float y3, float x4, float y4) {
-    cv::Mat transformed;
     cv::Mat thresholded;
 
     cv::cvtColor(img, img, cv::COLOR_BGR2GRAY);
-    transformed = crop_and_transform(img, x1, y1, x2, y2, x3, y3, x4, y4);
+    crop_and_transform(img, x1, y1, x2, y2, x3, y3, x4, y4);
+#ifdef DEVMODE
+    cv::imshow("transformed", img);
+#endif
     // cv::adaptiveThreshold(img, thresholded, 255, cv::ADAPTIVE_THRESH_MEAN_C, cv::THRESH_BINARY, 69, 20);
-    cv::adaptiveThreshold(transformed, thresholded, 255, cv::ADAPTIVE_THRESH_MEAN_C, cv::THRESH_BINARY, 63, 10);
-    // cv::adaptiveThreshold(transformed, thresholded, 255, cv::ADAPTIVE_THRESH_GAUSSIAN_C, cv::THRESH_BINARY, 53, 10);
+    cv::adaptiveThreshold(img, thresholded, 255, cv::ADAPTIVE_THRESH_MEAN_C, cv::THRESH_BINARY, 63, 10);
+    // cv::adaptiveThreshold(img, thresholded, 255, cv::ADAPTIVE_THRESH_GAUSSIAN_C, cv::THRESH_BINARY, 53, 10);
 
-    std::vector<Cell> cells = extract_cells(thresholded, transformed);
+    std::vector<Cell> cells = extract_cells(thresholded, img);
     NumberClassifier::predict_numbers(cells);
 
     return cells_to_array(cells);
 }
 
-cv::Mat GridExtractor::crop_and_transform(cv::Mat img, float x1, float y1, float x2, float y2, float x3, float y3, float x4, float y4) {
+void GridExtractor::crop_and_transform(cv::Mat &img, float x1, float y1, float x2, float y2, float x3, float y3, float x4, float y4) {
     const int dst_size = 450;  // img.size().width;
-    cv::Mat dst = cv::Mat::zeros(dst_size, dst_size, CV_8UC1);
     std::vector<cv::Point2f> dst_pts;
     std::vector<cv::Point2f> img_pts;
 
-    dst_pts.push_back(cv::Point(0, 0));
-    dst_pts.push_back(cv::Point(dst_size - 1, 0));
-    dst_pts.push_back(cv::Point(0, dst_size - 1));
-    dst_pts.push_back(cv::Point(dst_size - 1, dst_size - 1));
+    dst_pts.push_back(cv::Point2f(0, 0));
+    dst_pts.push_back(cv::Point2f(dst_size - 1, 0));
+    dst_pts.push_back(cv::Point2f(0, dst_size - 1));
+    dst_pts.push_back(cv::Point2f(dst_size - 1, dst_size - 1));
 
     img_pts.push_back(cv::Point2f(x1, y1));
     img_pts.push_back(cv::Point2f(x2, y2));
@@ -38,9 +43,7 @@ cv::Mat GridExtractor::crop_and_transform(cv::Mat img, float x1, float y1, float
     img_pts.push_back(cv::Point2f(x4, y4));
 
     cv::Mat transformation_matrix = cv::getPerspectiveTransform(img_pts, dst_pts);
-    cv::warpPerspective(img, dst, transformation_matrix, dst.size());
-
-    return dst;
+    cv::warpPerspective(img, img, transformation_matrix, cv::Size(dst_size, dst_size));
 }
 
 std::vector<Cell> GridExtractor::extract_cells(cv::Mat &thresh, cv::Mat &img) {

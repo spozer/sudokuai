@@ -14,21 +14,23 @@
 BoundingBox *detect_grid(char *path) {
     BoundingBox *bb_ptr = (BoundingBox *)std::malloc(sizeof(BoundingBox));
     cv::Mat mat = cv::imread(path);
+    int width = mat.size().width;
+    int height = mat.size().height;
 
-    if (mat.size().width == 0 || mat.size().height == 0) {
+    if (width == 0 || height == 0) {
         return bb_ptr;
     }
 
     std::vector<cv::Point> points = GridDetector::detect_grid(mat);
 
-    bb_ptr->top_left.x = (double)points[0].x / mat.size().width;
-    bb_ptr->top_left.y = (double)points[0].y / mat.size().height;
-    bb_ptr->top_right.x = (double)points[1].x / mat.size().width;
-    bb_ptr->top_right.y = (double)points[1].y / mat.size().height;
-    bb_ptr->bottom_left.x = (double)points[2].x / mat.size().width;
-    bb_ptr->bottom_left.y = (double)points[2].y / mat.size().height;
-    bb_ptr->bottom_right.x = (double)points[3].x / mat.size().width;
-    bb_ptr->bottom_right.y = (double)points[3].y / mat.size().height;
+    bb_ptr->top_left.x = static_cast<double>(points[0].x) / width;
+    bb_ptr->top_left.y = static_cast<double>(points[0].y) / height;
+    bb_ptr->top_right.x = static_cast<double>(points[1].x) / width;
+    bb_ptr->top_right.y = static_cast<double>(points[1].y) / height;
+    bb_ptr->bottom_left.x = static_cast<double>(points[2].x) / width;
+    bb_ptr->bottom_left.y = static_cast<double>(points[2].y) / height;
+    bb_ptr->bottom_right.x = static_cast<double>(points[3].x) / width;
+    bb_ptr->bottom_right.y = static_cast<double>(points[3].y) / height;
 
     return bb_ptr;
 }
