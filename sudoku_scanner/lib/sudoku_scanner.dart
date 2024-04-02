@@ -4,7 +4,6 @@ import 'dart:ui' show Offset;
 import 'package:ffi/ffi.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:flutter/services.dart' show rootBundle;
-// import 'sudoku_scanner_bindings.dart' as bridge;
 import 'bounding_box.dart';
 import 'sudoku_scanner_bindings_generated.dart' as native;
 

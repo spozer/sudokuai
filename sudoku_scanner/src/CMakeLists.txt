@@ -5,6 +5,9 @@ cmake_minimum_required(VERSION 3.10)
 
 project(sudoku_scanner_library VERSION 0.0.1 LANGUAGES CXX)
 
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../includes)
 
 add_library(sudoku_scanner SHARED

@@ -10,7 +10,7 @@
 #include "../src/extraction/grid_extractor.hpp"
 #include "../src/sudoku_scanner.h"
 
-const std::string IMAGE_PATH = "../images/maz3.jpg";
+const std::string IMAGE_PATH = "../../test/images/8.jpg";
 const std::string MODEL_PATH = "../../assets/model.tflite";
 const int RESOLUTION = 480;
 

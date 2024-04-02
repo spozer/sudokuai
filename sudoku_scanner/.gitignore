@@ -30,7 +30,6 @@ build/
 
 # Custom
 android/src/main/jniLibs/**
-assets/*
-dev/build/
-dev/images/**
-dev/libs/**
+linux/libs/**
+assets/**
+test/images/**
