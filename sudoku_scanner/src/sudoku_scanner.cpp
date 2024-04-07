@@ -81,7 +81,7 @@ int *extract_grid_from_roi(
     cv::Mat image = cv::imread(path);
 
     assert(roi_size > 0 && roi_size <= image.size().width);
-    assert(abs(roi_offset) < (image.size().height - roi_size) / 2);
+    assert(abs(roi_offset) <= (image.size().height - roi_size) / 2);
 
     // get position of top left corner
     const int offset_w = (image.size().width - roi_size) / 2;

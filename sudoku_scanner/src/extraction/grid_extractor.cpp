@@ -11,17 +11,21 @@
 
 std::vector<int> GridExtractor::extract_grid(cv::Mat &img, float x1, float y1, float x2, float y2, float x3, float y3, float x4, float y4) {
     cv::Mat thresholded;
-
     cv::cvtColor(img, img, cv::COLOR_BGR2GRAY);
     crop_and_transform(img, x1, y1, x2, y2, x3, y3, x4, y4);
 #ifdef DEVMODE
     cv::imshow("transformed", img);
 #endif
     // cv::adaptiveThreshold(img, thresholded, 255, cv::ADAPTIVE_THRESH_MEAN_C, cv::THRESH_BINARY, 69, 20);
-    cv::adaptiveThreshold(img, thresholded, 255, cv::ADAPTIVE_THRESH_MEAN_C, cv::THRESH_BINARY, 63, 10);
-    // cv::adaptiveThreshold(img, thresholded, 255, cv::ADAPTIVE_THRESH_GAUSSIAN_C, cv::THRESH_BINARY, 53, 10);
-
+    // cv::adaptiveThreshold(img, thresholded, 255, cv::ADAPTIVE_THRESH_MEAN_C, cv::THRESH_BINARY, 63, 10);
+    cv::adaptiveThreshold(img, thresholded, 255, cv::ADAPTIVE_THRESH_GAUSSIAN_C, cv::THRESH_BINARY, 53, 10);
+#ifdef DEVMODE
+    cv::imshow("thresholded (extraction)", thresholded);
+#endif
     std::vector<Cell> cells = extract_cells(thresholded, img);
+#ifdef DEVMODE
+    cv::imshow("cells", stitch_cells(cells));
+#endif
     NumberClassifier::predict_numbers(cells);
 
     return cells_to_array(cells);
@@ -118,9 +122,9 @@ std::vector<int> GridExtractor::cells_to_array(std::vector<Cell> &cells) {
 }
 
 void GridExtractor::extract_number(cv::Mat &img, std::vector<cv::Point> &output) {
-    const int threshold = 70;  // min amount of points for number
+    const int threshold = 35;  // min amount of points for number
     int cell_size = img.size().width;
-    int scan_size = cell_size / 5;
+    int scan_size = cell_size / 4;
 
     int scan_box_min = (cell_size - scan_size) / 2;
     int scan_box_max = cell_size - scan_box_min;
@@ -141,9 +145,8 @@ void GridExtractor::extract_number(cv::Mat &img, std::vector<cv::Point> &output)
     }
 
     if (connected_areas.size() > 0) {
-        auto is_bigger = [](std::vector<cv::Point> &list1, std::vector<cv::Point> &list2) { return list1.size() > list2.size(); };
-        std::vector<std::vector<cv::Point>>::iterator pr = std::max_element(connected_areas.begin(), connected_areas.end(), is_bigger);
-        output = *pr;
+        auto is_bigger = [](std::vector<cv::Point> &list1, std::vector<cv::Point> &list2) { return list1.size() < list2.size(); };
+        output = *std::max_element(connected_areas.begin(), connected_areas.end(), is_bigger);
     }
 }
 

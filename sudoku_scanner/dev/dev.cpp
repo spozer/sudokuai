@@ -10,7 +10,7 @@
 #include "../src/extraction/grid_extractor.hpp"
 #include "../src/sudoku_scanner.h"
 
-const std::string IMAGE_PATH = "../../test/images/8.jpg";
+const std::string IMAGE_PATH = "../../test/images/25.jpg";
 const std::string MODEL_PATH = "../../assets/model.tflite";
 const int RESOLUTION = 480;
 
@@ -64,6 +64,8 @@ int main() {
     print_info();
 
     cv::Mat image = cv::imread(IMAGE_PATH);
+    int src_width = image.size().width;
+    int src_height = image.size().height;
 
     if (image.empty()) {
         printf("Could not read image %s\n", IMAGE_PATH.c_str());
@@ -72,8 +74,6 @@ int main() {
 
     // init tflite model
     set_model((char *)MODEL_PATH.c_str());
-
-    GridDetector::resize_to_resolution(image, RESOLUTION);
 
     // bounding box
     std::unique_ptr<BoundingBox> bb(detect_grid((char *)IMAGE_PATH.c_str()));
@@ -100,12 +100,12 @@ int main() {
 
     cv::waitKey(0);
 
-    std::unique_ptr<int> bbroi(extract_grid_from_roi((char *)IMAGE_PATH.c_str(), 2160, 0));
-    std::vector<int> grid2(bbroi.get(), bbroi.get() + 81);
+    // std::unique_ptr<int> bbroi(extract_grid_from_roi((char *)IMAGE_PATH.c_str(), (src_width < src_height) ? src_width : src_height, 0));
+    // std::vector<int> grid2(bbroi.get(), bbroi.get() + 81);
 
-    print_sudoku_grid(grid2);
+    // print_sudoku_grid(grid2);
 
-    cv::waitKey(0);
+    // cv::waitKey(0);
 
     return 0;
 }
