@@ -11,9 +11,8 @@ class GridDetector {
    private:
     GridDetector() = delete;
     static void resize_to_resolution(cv::Mat &img, int resolution);
-    static double calc_angle(cv::Point point0, cv::Point point1, cv::Point point2);
     static void sort_quadrilateral(std::vector<cv::Point> &quadrilateral);
-    static bool find_sudoku_grid(const cv::Mat &vector, std::vector<cv::Point> &result);
+    static bool find_sudoku_grid(const cv::Mat &vector, std::vector<cv::Point> &output);
     static cv::Mat get_hough_lines(cv::Mat &img);
 };
 

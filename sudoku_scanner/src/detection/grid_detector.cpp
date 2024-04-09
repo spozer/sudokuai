@@ -21,7 +21,8 @@ const std::vector<std::tuple<int, double>> THRESHOLD_SETTINGS = {
     {69, 20.0},
     {45, 15.0},
     {23, 10.0},
-    {9, 10.0}};
+    {13, 10.0},
+    {9, 5.0}};
 
 // TODO: move to helper headers (helper.hpp utility.hpp ?)
 void GridDetector::resize_to_resolution(cv::Mat &img, int resolution) {
@@ -42,12 +43,21 @@ void GridDetector::resize_to_resolution(cv::Mat &img, int resolution) {
     cv::resize(img, img, cv::Size(dest_width, dest_height), interpolation);
 }
 
-// TODO: move to helper headers
-double GridDetector::calc_angle(cv::Point point0, cv::Point point1, cv::Point point2) {
-    cv::Point line1 = point1 - point0;
-    cv::Point line2 = point2 - point0;
+void GridDetector::sort_quadrilateral(std::vector<cv::Point> &quadrilateral) {
+    if (quadrilateral.empty()) {
+        return;
+    }
 
-    return std::acos(line1.dot(line2) / (cv::norm(line1) * cv::norm(line2))) * 180 / CV_PI;
+    cv::Point tl, tr, bl, br;
+
+    auto has_smaller_sum = [](cv::Point point1, cv::Point point2) { return point1.x + point1.y < point2.x + point2.y; };
+    auto has_smaller_diff = [](cv::Point point1, cv::Point point2) { return point1.y - point1.x < point2.y - point2.x; };
+
+    // sort for smaller sum -> {tl < (tr ? bl) < br}
+    std::sort(quadrilateral.begin(), quadrilateral.end(), has_smaller_sum);
+
+    // sort for smaller diff -> {(tl) tr < bl (br)}
+    std::sort(quadrilateral.begin() + 1, quadrilateral.end() - 1, has_smaller_diff);
 }
 
 std::vector<cv::Point> GridDetector::detect_grid(cv::Mat &img) {
@@ -57,17 +67,17 @@ std::vector<cv::Point> GridDetector::detect_grid(cv::Mat &img) {
     cv::pyrUp(img, img);
     resize_to_resolution(img, RESOLUTION);
 
-#ifdef DEVMODE
-    cv::Mat dil;
-    cv::equalizeHist(img, dil);
-    cv::adaptiveThreshold(dil, dil, 255, cv::ADAPTIVE_THRESH_MEAN_C, cv::THRESH_BINARY, 69, 20.0);
-    cv::dilate(dil, dil, cv::Mat());
-    // cv::dilate(dil, dil, cv::Mat());
-    // cv::dilate(dil, dil, cv::Mat());
-    // cv::dilate(dil, dil, cv::Mat());
-    // cv::dilate(dil, dil, cv::Mat());
-    cv::imshow("dil", dil);
-#endif
+    // #ifdef DEVMODE
+    //     cv::Mat dil;
+    //     cv::equalizeHist(img, dil);
+    //     cv::adaptiveThreshold(dil, dil, 255, cv::ADAPTIVE_THRESH_MEAN_C, cv::THRESH_BINARY, 69, 20.0);
+    //     cv::dilate(dil, dil, cv::Mat());
+    //     // cv::dilate(dil, dil, cv::Mat());
+    //     // cv::dilate(dil, dil, cv::Mat());
+    //     // cv::dilate(dil, dil, cv::Mat());
+    //     // cv::dilate(dil, dil, cv::Mat());
+    //     cv::imshow("dil", dil);
+    // #endif
 
     cv::Mat thresholded;
     std::vector<cv::Point> detection;
@@ -85,6 +95,8 @@ std::vector<cv::Point> GridDetector::detect_grid(cv::Mat &img) {
         cv::imshow(name, thresholded);
 #endif
         if (has_sudoku_grid) {
+            sort_quadrilateral(detection);
+
 #ifdef DEVMODE
             cv::cvtColor(img, img, cv::COLOR_GRAY2BGR);
             cv::polylines(img, std::vector{detection[0], detection[1], detection[3], detection[2]}, true, cv::Scalar(0, 0, 255));
@@ -99,28 +111,16 @@ std::vector<cv::Point> GridDetector::detect_grid(cv::Mat &img) {
             return detection;
         }
     }
-
     // no detection
-    return {cv::Point(0, 0), cv::Point(src_size.width - 1, 0), cv::Point(0, src_size.height - 1), cv::Point(src_size.width - 1, src_size.height - 1)};
+    return {cv::Point(0, 0),
+            cv::Point(src_size.width - 1, 0),
+            cv::Point(0, src_size.height - 1),
+            cv::Point(src_size.width - 1, src_size.height - 1)};
 }
 
-void GridDetector::sort_quadrilateral(std::vector<cv::Point> &quadrilateral) {
-    cv::Point tl, tr, bl, br;
-
-    auto has_smaller_sum = [](cv::Point point1, cv::Point point2) { return point1.x + point1.y < point2.x + point2.y; };
-    auto has_smaller_diff = [](cv::Point point1, cv::Point point2) { return point1.y - point1.x < point2.y - point2.x; };
-
-    // sort for smaller sum -> {tl < (tr ? bl) < br}
-    std::sort(quadrilateral.begin(), quadrilateral.end(), has_smaller_sum);
-
-    // sort for smaller diff -> {(tl) tr < bl (br)}
-    std::sort(quadrilateral.begin() + 1, quadrilateral.end() - 1, has_smaller_diff);
-}
-
-bool GridDetector::find_sudoku_grid(const cv::Mat &binary, std::vector<cv::Point> &result) {
+bool GridDetector::find_sudoku_grid(const cv::Mat &binary, std::vector<cv::Point> &output) {
     std::vector<std::vector<cv::Point>> contours;
     std::vector<cv::Vec4i> hierarchy;
-    std::vector<std::vector<cv::Point>> quadrilaterals;
     std::vector<std::vector<cv::Point>> squarelikes;
 
     cv::findContours(binary, contours, hierarchy, cv::RETR_CCOMP, cv::CHAIN_APPROX_SIMPLE);
@@ -129,12 +129,9 @@ bool GridDetector::find_sudoku_grid(const cv::Mat &binary, std::vector<cv::Point
         return false;
     }
 
-    // TODO: move to helper header
-    auto mod = [](int a, int b) { return ((a % b) + b) % b; };
-
     for (int i = 0; i < contours.size(); ++i) {
-        // check if contour has no holes
-        if (hierarchy[i][2] == -1) {
+        // filter out contours that have no holes and also holes themself
+        if (hierarchy[i][2] == -1 || hierarchy[i][3] != -1) {
             continue;
         }
 
@@ -143,23 +140,23 @@ bool GridDetector::find_sudoku_grid(const cv::Mat &binary, std::vector<cv::Point
         double eps = 0.02 * cv::arcLength(contour, true);
         cv::approxPolyDP(contour, poly_approx, eps, true);
 
-        if (poly_approx.size() == 4 && cv::isContourConvex(poly_approx) && cv::contourArea(contour) > MIN_AREA) {
-            double min_angle = 360;
-            double max_angle = 0;
+        if (poly_approx.size() == 4 && cv::isContourConvex(poly_approx) && cv::contourArea(poly_approx) > MIN_AREA) {
+            double p = cv::arcLength(poly_approx, true);
+            double area = cv::contourArea(contour);
 
-            for (int i = 0; i < 4; ++i) {
-                double angle = calc_angle(poly_approx[i], poly_approx[mod(i - 1, 4)], poly_approx[mod(i + 1, 4)]);
-                max_angle = cv::max(max_angle, angle);
-                min_angle = cv::min(min_angle, angle);
-#ifdef DEVMODE
-                printf("angle %d (%d, %d): %f\n", i, poly_approx[i].x, poly_approx[i].y, angle);
-#endif
-            }
+            double d1 = cv::norm(poly_approx[0] - poly_approx[2]);
+            double d2 = cv::norm(poly_approx[1] - poly_approx[3]);
 
-            // filter out non rectangle-like angles
-            if (min_angle < 70 || max_angle > 110) {
+            double d3 = cv::norm(poly_approx[0] - poly_approx[1]);
+            double d4 = cv::norm(poly_approx[1] - poly_approx[2]);
+
+            printf("%f %f %f %f\n", d1, d2, d3, d4);
+
+            if (!(d3 * 4 > d4 && d4 * 4 > d3 && d3 * d4 < area * 1.5 && d1 >= 0.15 * p && d2 >= 0.15 * p)) {
                 continue;
             }
+
+            squarelikes.push_back(poly_approx);
 
 #ifdef DEVMODE
             // count child contours
@@ -175,51 +172,24 @@ bool GridDetector::find_sudoku_grid(const cv::Mat &binary, std::vector<cv::Point
             }
             printf("contour %d has %d child(s)\n", i, count);
 #endif
-            // check if photo was taken perpendicular to image plane ("Draufsicht")
-            // this means the measured angles of the rectangular contoure are expected to be ~90°
-            if (max_angle - min_angle > 5) {
-                quadrilaterals.push_back(poly_approx);
-                continue;
-            }
-
-            // Now that we now that the contour is for sure a rectangle,
-            // we can check whether it is also a square. This is done by
-            // measuring the contoures aspect ratio.
-
-            cv::RotatedRect rect = cv::minAreaRect(poly_approx);
-            double aspect_ratio = static_cast<double>(rect.size.width) / std::max(rect.size.height, 1.0f);
-#ifdef DEVMODE
-            printf("aspect ratio: %f\n", aspect_ratio);
-#endif
-            // filter out non square-like aspect ratios
-            if (aspect_ratio < 0.9 || aspect_ratio > 1.1) {
-                continue;
-            }
-
-            squarelikes.push_back(poly_approx);
         }
     }
 
 #ifdef DEVMODE
-    printf("found %zu square-like contour(s)\n", quadrilaterals.size() + squarelikes.size());
+    printf("found %zu square-like contour(s)\n", squarelikes.size());
 #endif
 
-    // detected quadrilaterals can be squares depending on the perspective the photo was taken at
-    std::vector<std::vector<cv::Point>> &possible_squares = squarelikes.empty() ? quadrilaterals : squarelikes;
+    if (squarelikes.empty()) {
+        return false;
+    }
 
     // TODO: maybe move to helper header?
     auto is_bigger = [](std::vector<cv::Point> &contour1, std::vector<cv::Point> &contour2) {
         return cv::contourArea(contour1) < cv::contourArea(contour2);
     };
 
-    if (possible_squares.empty()) {
-        return false;
-    }
-
     // find biggest area square-like
-    std::vector<cv::Point> &max_squarelike = *std::max_element(possible_squares.begin(), possible_squares.end(), is_bigger);
-    sort_quadrilateral(max_squarelike);
-    result = max_squarelike;
+    output = *std::max_element(squarelikes.begin(), squarelikes.end(), is_bigger);
 
     return true;
 }
