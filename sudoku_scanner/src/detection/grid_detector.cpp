@@ -67,18 +67,6 @@ std::vector<cv::Point> GridDetector::detect_grid(cv::Mat &img) {
     cv::pyrUp(img, img);
     resize_to_resolution(img, RESOLUTION);
 
-    // #ifdef DEVMODE
-    //     cv::Mat dil;
-    //     cv::equalizeHist(img, dil);
-    //     cv::adaptiveThreshold(dil, dil, 255, cv::ADAPTIVE_THRESH_MEAN_C, cv::THRESH_BINARY, 69, 20.0);
-    //     cv::dilate(dil, dil, cv::Mat());
-    //     // cv::dilate(dil, dil, cv::Mat());
-    //     // cv::dilate(dil, dil, cv::Mat());
-    //     // cv::dilate(dil, dil, cv::Mat());
-    //     // cv::dilate(dil, dil, cv::Mat());
-    //     cv::imshow("dil", dil);
-    // #endif
-
     cv::Mat thresholded;
     std::vector<cv::Point> detection;
 

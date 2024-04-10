@@ -9,7 +9,7 @@ struct Cell {
     const int y;
     int number = 0;
 
-    Cell(const cv::Mat img, const int x, const int y) : img(img), x(x), y(y) {}
+    Cell(const cv::Mat &img, const int x, const int y) : img(img), x(x), y(y) {}
 };
 
 #endif

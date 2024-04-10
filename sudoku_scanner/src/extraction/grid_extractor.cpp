@@ -16,14 +16,17 @@ std::vector<int> GridExtractor::extract_grid(cv::Mat &img, float x1, float y1, f
     cv::Mat thresholded;
     cv::cvtColor(img, img, cv::COLOR_BGR2GRAY);
     crop_and_transform(img, x1, y1, x2, y2, x3, y3, x4, y4);
+    cv::pyrDown(img, thresholded);
+    cv::pyrUp(thresholded, thresholded);
+    // cv::adaptiveThreshold(thresholded, thresholded, 255, cv::ADAPTIVE_THRESH_MEAN_C, cv::THRESH_BINARY, 69, 20);
+    // cv::adaptiveThreshold(thresholded, thresholded, 255, cv::ADAPTIVE_THRESH_MEAN_C, cv::THRESH_BINARY, 63, 10);
+    cv::adaptiveThreshold(thresholded, thresholded, 255, cv::ADAPTIVE_THRESH_GAUSSIAN_C, cv::THRESH_BINARY, 53, 10);
 #ifdef DEVMODE
-    cv::imshow("transformed", img);
+    cv::imshow("transformed + thresholded", thresholded);
 #endif
-    // cv::adaptiveThreshold(img, thresholded, 255, cv::ADAPTIVE_THRESH_MEAN_C, cv::THRESH_BINARY, 69, 20);
-    // cv::adaptiveThreshold(img, thresholded, 255, cv::ADAPTIVE_THRESH_MEAN_C, cv::THRESH_BINARY, 63, 10);
-    cv::adaptiveThreshold(img, thresholded, 255, cv::ADAPTIVE_THRESH_GAUSSIAN_C, cv::THRESH_BINARY, 53, 10);
+    remove_grid_lines(thresholded);
 #ifdef DEVMODE
-    cv::imshow("thresholded (extraction)", thresholded);
+    cv::imshow("thresholded (grid extraction)", thresholded);
 #endif
     std::vector<Cell> cells = extract_cells(thresholded, img);
 #ifdef DEVMODE
@@ -49,6 +52,35 @@ void GridExtractor::crop_and_transform(cv::Mat &img, float x1, float y1, float x
 
     cv::Mat transformation_matrix = cv::getPerspectiveTransform(img_pts, dst_pts);
     cv::warpPerspective(img, img, transformation_matrix, cv::Size(GRID_SIZE, GRID_SIZE));
+}
+
+void GridExtractor::remove_grid_lines(cv::Mat &binary) {
+    cv::Mat inv;
+    cv::bitwise_not(binary, inv);
+
+    cv::Mat horizontal_lines;
+    cv::Mat kernel_h = cv::getStructuringElement(cv::MORPH_RECT, cv::Size(0.8 * CELL_SIZE, 1));
+    cv::morphologyEx(inv, horizontal_lines, cv::MORPH_OPEN, kernel_h);
+
+    cv::Mat vertical_lines;
+    cv::Mat kernel_v = cv::getStructuringElement(cv::MORPH_RECT, cv::Size(1, 0.9 * CELL_SIZE));
+    cv::morphologyEx(inv, vertical_lines, cv::MORPH_OPEN, kernel_v);
+
+    // use existing Mat to save some memory
+    cv::bitwise_or(horizontal_lines, vertical_lines, horizontal_lines);
+    cv::Mat &grid_lines = horizontal_lines;
+    vertical_lines.release();
+
+    // make grid thicker
+    cv::Mat kernel = cv::getStructuringElement(cv::MORPH_CROSS, cv::Size(5, 5));
+    cv::dilate(grid_lines, grid_lines, kernel);
+
+    // remove grid from input image
+    cv::bitwise_or(binary, grid_lines, binary);
+
+#ifdef DEVMODE
+    cv::imshow("grid lines", grid_lines);
+#endif
 }
 
 std::vector<int> GridExtractor::cells_to_array(std::vector<Cell> &cells) {
@@ -87,7 +119,7 @@ void GridExtractor::flood_fill_white(cv::Mat &binary, std::vector<cv::Point> &po
 
 bool GridExtractor::extract_number(cv::Mat &binary, cv::Rect &output, cv::Point &center) {
     const int threshold = 35;  // min amount of points for number
-    const int scan_size = CELL_SIZE / 4;
+    const int scan_size = CELL_SIZE / 3;
 
     std::vector<cv::Rect> connected_areas;
 
@@ -106,13 +138,21 @@ bool GridExtractor::extract_number(cv::Mat &binary, cv::Rect &output, cv::Point 
 
             cv::Rect bb = cv::boundingRect(points);
 
-            if (bb.height > 0.9 * CELL_SIZE || bb.width > 0.8 * CELL_SIZE) {
+            if (bb.height < 0.2 * CELL_SIZE || bb.height > 0.9 * CELL_SIZE ||
+                bb.width < 0.1 * CELL_SIZE || bb.width > 0.8 * CELL_SIZE) {
                 continue;
             }
 
             connected_areas.push_back(bb);
         }
     }
+
+#ifdef DEVMODE
+    // cv::Point offset(scan_size / 2, scan_size / 2);
+    // cv::rectangle(binary, center - offset, center + offset, cv::Scalar(0, 0, 0));
+    // cv::imshow("flood fill", binary);
+    // cv::waitKey();
+#endif
 
     if (connected_areas.empty()) {
         return false;
