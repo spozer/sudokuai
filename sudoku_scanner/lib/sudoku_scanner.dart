@@ -34,7 +34,8 @@ class SudokuScanner {
     }
 
     if (!Platform.isAndroid) {
-      throw UnsupportedError('Unknown platform: ${Platform.operatingSystem}');
+      throw UnsupportedError(
+          'Unsupported platform: ${Platform.operatingSystem}');
     }
 
     /// The dynamic library in which the symbols for [SudokuScannerBindings] can be found.

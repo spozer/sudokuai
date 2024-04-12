@@ -1,18 +1,37 @@
-# sudokuai
+# <img align=center src="assets/icon.png" width=70> SudokuAI
 
-Install flutter https://docs.flutter.dev/get-started/install/linux/android
+Take Sudoku puzzles out of their printed medium and solve them on your smartphone instead!
 
-A new Flutter project.
+Using Computer Vision and AI this app can detect and extract Sudoku grids from images and display them as digital puzzles on the users phone.
 
-## Getting Started
+<p align="middle">
+<img src="screenshots/screenshot_camera.png" width=24%>
+&nbsp;
+<img src="screenshots/screenshot_detection.png" width=24%>
+&nbsp;
+<img src="screenshots/screenshot_solving_errors.png" width=24%>
+&nbsp;
+<img src="screenshots/screenshot_solved.png" width=24%>
+</p>
 
-This project is a starting point for a Flutter application.
+## How to build
 
-A few resources to get you started if this is your first Flutter project:
+You need to have [Flutter](https://docs.flutter.dev/get-started/install/linux/android) and [Android SDK](https://docs.flutter.dev/get-started/install/linux/android#configure-android-development) installed.
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+First you need to setup third-party JNI libraries and update the sudoku_scanner plugin:
+``` sh
+cd sudoku_scanner
+sh setup.sh
+flutter pub get
+cd ..
+```
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+Then update the main app and run the build command:
+``` sh
+flutter pub get
+flutter run
+```
+You can run `flutter build apk` to just build the apk without running it.
+
+> \[!NOTE]\
+> Read [here](sudoku_scanner/) for more information on how to debug and test the sudoku_scanner plugin!

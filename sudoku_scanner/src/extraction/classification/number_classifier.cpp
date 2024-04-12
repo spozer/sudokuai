@@ -13,6 +13,9 @@
 #include <android/log.h>
 #endif
 
+// TODO: use tflite with gpu delegates https://www.tensorflow.org/lite/android/delegates/gpu_native#java
+// https://central.sonatype.com/artifact/org.tensorflow/tensorflow-lite-gpu/2.6.0/versions
+
 void NumberClassifier::predict_numbers(std::vector<Cell> &cells) {
     std::vector<float> input;
     std::vector<float> output = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
@@ -50,17 +53,16 @@ void NumberClassifier::predict_numbers(std::vector<Cell> &cells) {
 
         // interpret output
         int number = arg_max(output) + 1;
-        float confidence = output[number - 1] * 100;
         cell.number = number;
 
 #ifdef __ANDROID__
 #ifndef NDEBUG
+        float confidence = output[number - 1] * 100;
         std::string debug = "(" + std::to_string(cell.x) + ", " + std::to_string(cell.y) + ") " + std::to_string(number) + " [" + std::to_string(confidence) + "%]";
         __android_log_print(ANDROID_LOG_DEBUG, "predict_numbers", "%s", debug.c_str());
 #endif
 #endif
     }
-
     // dispose of the model and interpreter objects
     TfLiteInterpreterDelete(interpreter);
     TfLiteInterpreterOptionsDelete(options);

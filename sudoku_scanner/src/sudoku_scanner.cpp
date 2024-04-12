@@ -35,6 +35,7 @@ BoundingBox *detect_grid(char *path) {
     return bb_ptr;
 }
 
+// TODO: try get image as byte array directly from dart
 int *extract_grid(char *path, BoundingBox *bounding_box) {
     assert(bounding_box->top_left.x >= 0 && bounding_box->top_left.y >= 0);
     assert(bounding_box->top_right.x > 0 && bounding_box->top_right.y >= 0);
@@ -63,6 +64,7 @@ int *extract_grid(char *path, BoundingBox *bounding_box) {
         bounding_box->bottom_right.y * mat.size().height);
     mat.release();
 
+    // TODO: use uint8_t instead of 32-bit int
     int *grid_ptr = (int *)std::malloc(grid.size() * sizeof(int));
 
     // copy grid_array to pointer
@@ -73,6 +75,7 @@ int *extract_grid(char *path, BoundingBox *bounding_box) {
     return grid_ptr;
 }
 
+// TODO: try get image as byte array directly from dart
 int *extract_grid_from_roi(
     char *path,
     int roi_size,
@@ -108,6 +111,7 @@ int *extract_grid_from_roi(
         points[3].y);
     image_copy.release();
 
+    // TODO: use uint8_t instead of 32-bit int
     int *grid_ptr = (int *)std::malloc(grid.size() * sizeof(int));
 
     // copy grid_array to pointer
