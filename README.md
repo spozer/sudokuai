@@ -1,17 +1,17 @@
-# <img align=center src="assets/icon.png" width=70> SudokuAI
+# <img align=left src="assets/icon.png" width=60> SudokuAI
 
 Take Sudoku puzzles out of their printed medium and solve them on your smartphone instead!
 
 Using Computer Vision and AI this app can detect and extract Sudoku grids from images and display them as digital puzzles on the users phone.
 
 <p align="middle">
-<img src="screenshots/screenshot_camera.png" width=24%>
+<img src="screenshots/screenshot_camera.png" width=20%>
 &nbsp;
-<img src="screenshots/screenshot_detection.png" width=24%>
+<img src="screenshots/screenshot_detection.png" width=20%>
 &nbsp;
-<img src="screenshots/screenshot_solving_errors.png" width=24%>
+<img src="screenshots/screenshot_solving_errors.png" width=20%>
 &nbsp;
-<img src="screenshots/screenshot_solved.png" width=24%>
+<img src="screenshots/screenshot_solved.png" width=20%>
 </p>
 
 ## How to build
