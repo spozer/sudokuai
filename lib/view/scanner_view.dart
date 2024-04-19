@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:io';
+import 'dart:typed_data';
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:sudoku_scanner/sudoku_scanner.dart';
@@ -7,7 +8,7 @@ import 'package:sudoku_scanner/bounding_box.dart';
 
 class ScannerView extends StatefulWidget {
   final String imagePath;
-  final void Function(Future<List<int>> sudokuGrid) showSudoku;
+  final void Function(Future<Uint8List> sudokuGrid) showSudoku;
   final void Function() onBack;
 
   const ScannerView({

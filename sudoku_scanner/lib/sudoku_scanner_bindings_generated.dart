@@ -42,7 +42,7 @@ class SudokuScannerBindings {
   late final _detect_grid = _detect_gridPtr
       .asFunction<ffi.Pointer<BoundingBox> Function(ffi.Pointer<ffi.Char>)>();
 
-  ffi.Pointer<ffi.Int32> extract_grid(
+  ffi.Pointer<ffi.Uint8> extract_grid(
     ffi.Pointer<ffi.Char> path,
     ffi.Pointer<BoundingBox> bounding_box,
   ) {
@@ -54,13 +54,13 @@ class SudokuScannerBindings {
 
   late final _extract_gridPtr = _lookup<
       ffi.NativeFunction<
-          ffi.Pointer<ffi.Int32> Function(ffi.Pointer<ffi.Char>,
+          ffi.Pointer<ffi.Uint8> Function(ffi.Pointer<ffi.Char>,
               ffi.Pointer<BoundingBox>)>>('extract_grid');
   late final _extract_grid = _extract_gridPtr.asFunction<
-      ffi.Pointer<ffi.Int32> Function(
+      ffi.Pointer<ffi.Uint8> Function(
           ffi.Pointer<ffi.Char>, ffi.Pointer<BoundingBox>)>();
 
-  ffi.Pointer<ffi.Int32> extract_grid_from_roi(
+  ffi.Pointer<ffi.Uint8> extract_grid_from_roi(
     ffi.Pointer<ffi.Char> path,
     int roi_size,
     int roi_offset,
@@ -74,10 +74,10 @@ class SudokuScannerBindings {
 
   late final _extract_grid_from_roiPtr = _lookup<
       ffi.NativeFunction<
-          ffi.Pointer<ffi.Int32> Function(ffi.Pointer<ffi.Char>, ffi.Int32,
+          ffi.Pointer<ffi.Uint8> Function(ffi.Pointer<ffi.Char>, ffi.Int32,
               ffi.Int32)>>('extract_grid_from_roi');
   late final _extract_grid_from_roi = _extract_grid_from_roiPtr.asFunction<
-      ffi.Pointer<ffi.Int32> Function(ffi.Pointer<ffi.Char>, int, int)>();
+      ffi.Pointer<ffi.Uint8> Function(ffi.Pointer<ffi.Char>, int, int)>();
 
   void set_model(
     ffi.Pointer<ffi.Char> path,
@@ -94,18 +94,18 @@ class SudokuScannerBindings {
       _set_modelPtr.asFunction<void Function(ffi.Pointer<ffi.Char>)>();
 
   void free_pointer(
-    ffi.Pointer<ffi.Int32> pointer,
+    ffi.Pointer<ffi.Void> pointer,
   ) {
     return _free_pointer(
       pointer,
     );
   }
 
-  late final _free_pointerPtr =
-      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Pointer<ffi.Int32>)>>(
+  late final free_pointerPtr =
+      _lookup<ffi.NativeFunction<ffi.Void Function(ffi.Pointer<ffi.Void>)>>(
           'free_pointer');
   late final _free_pointer =
-      _free_pointerPtr.asFunction<void Function(ffi.Pointer<ffi.Int32>)>();
+      free_pointerPtr.asFunction<void Function(ffi.Pointer<ffi.Void>)>();
 }
 
 final class Offset extends ffi.Struct {

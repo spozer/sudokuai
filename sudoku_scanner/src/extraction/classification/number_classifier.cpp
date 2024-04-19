@@ -17,8 +17,8 @@
 // https://central.sonatype.com/artifact/org.tensorflow/tensorflow-lite-gpu/2.6.0/versions
 
 void NumberClassifier::predict_numbers(std::vector<Cell> &cells) {
-    std::vector<float> input;
-    std::vector<float> output = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
+    cv::Mat input;
+    std::vector<float> output(9, 0.0);
     std::string path_to_model = std::getenv(PATH_TO_MODEL_ENV_VAR);
 
     // create the model and interpreter options
@@ -36,16 +36,12 @@ void NumberClassifier::predict_numbers(std::vector<Cell> &cells) {
 
     for (Cell &cell : cells) {
         // prepare cell image
-        cv::Mat prepared;
-        resize(cell.img, prepared, cv::Size(28, 28));
-        prepared.convertTo(prepared, CV_32FC1);
-        prepared /= 255.0;
-
-        // write image in input buffer
-        input.assign((float *)prepared.datastart, (float *)prepared.dataend);
+        cv::resize(cell.img, input, cv::Size(28, 28));
+        input.convertTo(input, CV_32FC1);
+        input /= 255.0;
 
         // load input data into model
-        TfLiteTensorCopyFromBuffer(input_tensor, input.data(), input.size() * sizeof(float));
+        TfLiteTensorCopyFromBuffer(input_tensor, input.data, input.rows * input.cols * sizeof(float));
         // execute inference
         TfLiteInterpreterInvoke(interpreter);
         // extract the output tensor data

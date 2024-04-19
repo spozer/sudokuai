@@ -4,19 +4,13 @@ This is a [FFI Flutter plugin](https://docs.flutter.dev/platform-integration/and
 
 ## Project structure
 
-* `src`: Contains the native source code, and a CmakeFile.txt file for building
-  that source code into a dynamic library.
+* `src`: Contains the native source code, and a CmakeFile.txt file for building that source code into a dynamic library.
 
-* `lib`: Contains the Dart code that defines the API of the plugin, and which
-  calls into the native code using `dart:ffi`.
+* `lib`: Contains the Dart code that defines the API of the plugin, and which calls into the native code using `dart:ffi`.
 
 * `android`: Contains the build files and JNI libraries for building and bundling the native code library with the platform application.
 
-* `linux`: Contains the build files and third-party libraries for building the native code for debugging and testing purposes.
-
-* `dev`: Contains source code for debugging the native code.
-
-* `test`: Contains tests using GoogleTest for testing the native code.
+* `dev`: Contains source code and 3rd party libraries for debugging and testing the native code under Linux.
 
 ## How to build
 

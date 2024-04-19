@@ -1,4 +1,5 @@
 import 'dart:collection';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:tuple/tuple.dart';
 
@@ -17,9 +18,11 @@ class SudokuGrid extends ChangeNotifier {
   int _emptyCount = 0;
   BoardStatus _status = BoardStatus.inProgress;
 
-  SudokuGrid() : _blockList = List.generate(9, (index) => SudokuGridBlock(index), growable: false);
+  SudokuGrid()
+      : _blockList = List.generate(9, (index) => SudokuGridBlock(index),
+            growable: false);
 
-  void fillIn(List<int> valueList) {
+  void fillIn(Uint8List valueList) {
     _cellList = List.generate(9, (index) {
       final row = index;
       return List.generate(9, (index) {
@@ -79,7 +82,9 @@ class SudokuGrid extends ChangeNotifier {
     _actOnUnits(
       cell,
       (uCell) {
-        uCell.status = (uCell.value != 0 && uCell.value == cell.value) ? CellStatus.sameValue : CellStatus.inUnit;
+        uCell.status = (uCell.value != 0 && uCell.value == cell.value)
+            ? CellStatus.sameValue
+            : CellStatus.inUnit;
         return true;
       },
       onlyPeers: true,
@@ -90,7 +95,9 @@ class SudokuGrid extends ChangeNotifier {
   }
 
   void writeSelected(int value) {
-    if (_selectedCell == null || !_selectedCell!.isModifiable || _selectedCell!.value == value) return;
+    if (_selectedCell == null ||
+        !_selectedCell!.isModifiable ||
+        _selectedCell!.value == value) return;
 
     int dEmptyCount = 0;
 
@@ -113,7 +120,9 @@ class SudokuGrid extends ChangeNotifier {
     _actOnUnits(
       _selectedCell!,
       (uCell) {
-        uCell.status = (value != 0 && uCell.value == value) ? CellStatus.sameValue : CellStatus.inUnit;
+        uCell.status = (value != 0 && uCell.value == value)
+            ? CellStatus.sameValue
+            : CellStatus.inUnit;
         return true;
       },
       onlyPeers: true,
@@ -173,14 +182,16 @@ class SudokuGrid extends ChangeNotifier {
     return true;
   }
 
-  bool _assign(SudokuGridCell cell, int value, List<SudokuGridCell>? backtrackList) {
+  bool _assign(
+      SudokuGridCell cell, int value, List<SudokuGridCell>? backtrackList) {
     final otherValues = Set<int>.from(cell.possibilities);
     otherValues.remove(value);
 
     return otherValues.every((value) => _eliminate(cell, value, backtrackList));
   }
 
-  bool _eliminate(SudokuGridCell cell, int value, List<SudokuGridCell>? backtrackList) {
+  bool _eliminate(
+      SudokuGridCell cell, int value, List<SudokuGridCell>? backtrackList) {
     bool doBacktrack = backtrackList != null;
     // Already eliminated.
     if (!cell.eliminatePosibility(value, backtrack: doBacktrack)) return true;
@@ -221,13 +232,19 @@ class SudokuGrid extends ChangeNotifier {
   bool _search() {
     assert(_cellList != null);
     // Check if Sudoku already solved.
-    if (_cellList!.every((row) => row.every((cell) => cell.possibilities.length == 1))) return true;
+    if (_cellList!
+        .every((row) => row.every((cell) => cell.possibilities.length == 1))) {
+      return true;
+    }
 
     // Get cell with fewest possibilities.
     SudokuGridCell? nextCell;
     for (final row in _cellList!) {
       for (final cell in row.where((cell) => cell.possibilities.length > 1)) {
-        if (nextCell == null || cell.possibilities.length < nextCell.possibilities.length) nextCell = cell;
+        if (nextCell == null ||
+            cell.possibilities.length < nextCell.possibilities.length) {
+          nextCell = cell;
+        }
       }
     }
 
@@ -249,7 +266,9 @@ class SudokuGrid extends ChangeNotifier {
     return false;
   }
 
-  bool _actOnUnits(SudokuGridCell cell, bool Function(SudokuGridCell cell) action, {bool onlyPeers = false}) {
+  bool _actOnUnits(
+      SudokuGridCell cell, bool Function(SudokuGridCell cell) action,
+      {bool onlyPeers = false}) {
     assert(_cellList != null);
     final row = cell.row;
     final col = cell.col;

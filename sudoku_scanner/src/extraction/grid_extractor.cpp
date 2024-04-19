@@ -1,5 +1,6 @@
 #include "grid_extractor.hpp"
 
+#include <cstdint>
 #include <opencv2/imgproc.hpp>
 #include <vector>
 
@@ -12,7 +13,7 @@
 const int GRID_SIZE = 450;
 const int CELL_SIZE = GRID_SIZE / 9;
 
-std::vector<int> GridExtractor::extract_grid(cv::Mat &img, float x1, float y1, float x2, float y2, float x3, float y3, float x4, float y4) {
+std::vector<std::uint8_t> GridExtractor::extract_grid(cv::Mat &img, float x1, float y1, float x2, float y2, float x3, float y3, float x4, float y4) {
     cv::Mat thresholded;
     cv::cvtColor(img, img, cv::COLOR_BGR2GRAY);
     crop_and_transform(img, x1, y1, x2, y2, x3, y3, x4, y4);
@@ -83,8 +84,9 @@ void GridExtractor::remove_grid_lines(cv::Mat &binary) {
 #endif
 }
 
-std::vector<int> GridExtractor::cells_to_array(std::vector<Cell> &cells) {
-    std::vector<int> array(9 * 9, 0);
+std::vector<std::uint8_t> GridExtractor::cells_to_array(std::vector<Cell> &cells) {
+    std::vector<std::uint8_t> array(9 * 9, 0);
+    // std::uint8_t *array = static_cast<std::uint8_t *>(std::malloc(81 * sizeof(std::uint8_t)));
 
     for (Cell &cell : cells) {
         array[cell.x + 9 * cell.y] = cell.number;
@@ -199,8 +201,8 @@ void GridExtractor::make_square(cv::Rect &rect, int pad_size) {
 std::vector<Cell> GridExtractor::extract_cells(cv::Mat &binary, cv::Mat &img) {
     std::vector<Cell> cells;
 
-    for (int y = 0; y < 9; ++y) {
-        for (int x = 0; x < 9; ++x) {
+    for (std::uint8_t y = 0; y < 9; ++y) {
+        for (std::uint8_t x = 0; x < 9; ++x) {
             cv::Rect bounding_box;
             cv::Point center(x * CELL_SIZE + CELL_SIZE / 2, y * CELL_SIZE + CELL_SIZE / 2);
             bool has_number = extract_number(binary, bounding_box, center);

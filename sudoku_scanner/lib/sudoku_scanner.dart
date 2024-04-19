@@ -1,5 +1,6 @@
 import 'dart:ffi';
 import 'dart:io';
+import 'dart:typed_data';
 import 'dart:ui' show Offset;
 import 'package:ffi/ffi.dart';
 import 'package:path_provider/path_provider.dart';
@@ -53,8 +54,8 @@ class SudokuScanner {
     malloc.free(pathPointer);
   }
 
-  static void _freePointer(Pointer<Int32> pointer) {
-    _bindings.free_pointer(pointer);
+  static void _freePointer(Pointer pointer) {
+    _bindings.free_pointer(pointer.cast<Void>());
   }
 
   static Future<BoundingBox> detectGrid(String imagePath) async {
@@ -70,12 +71,13 @@ class SudokuScanner {
     );
 
     malloc.free(imagePathPointer);
-    malloc.free(nativeBoundingBoxPointer);
+    // malloc.free(nativeBoundingBoxPointer);
+    _freePointer(nativeBoundingBoxPointer);
 
     return bb;
   }
 
-  static Future<List<int>> extractGrid(
+  static Future<Uint8List> extractGrid(
       String imagePath, BoundingBox boundingBox) async {
     final imagePathPointer = imagePath.toNativeUtf8().cast<Char>();
     final nativeBoundingBoxPointer = malloc<native.BoundingBox>();
@@ -90,38 +92,41 @@ class SudokuScanner {
       ..bottom_right.x = boundingBox.bottomRight.dx
       ..bottom_right.y = boundingBox.bottomRight.dy;
 
-    Pointer<Int32> gridArray =
+    Pointer<Uint8> gridArray =
         _bindings.extract_grid(imagePathPointer, nativeBoundingBoxPointer);
 
     // It is not clear, whether asTypeList gets handled from GC or not:
     // https://github.com/dart-lang/ffi/issues/22
     // https://github.com/dart-lang/sdk/issues/45508
     // Either way it is probably better to free c heap in native code.
-    List<int> gridList = List.from(gridArray.asTypedList(81), growable: false);
+    // List<int> gridList = List.from(gridArray.asTypedList(81), growable: false);
+    Uint8List gridList =
+        gridArray.asTypedList(81, finalizer: _bindings.free_pointerPtr);
 
     malloc.free(imagePathPointer);
     malloc.free(nativeBoundingBoxPointer);
-    _freePointer(gridArray);
+    // _freePointer(gridArray);
 
     return gridList;
   }
 
-  static Future<List<int>> extractGridfromRoi(
+  static Future<Uint8List> extractGridfromRoi(
       String imagePath, int roiSize, int roiOffset) async {
     final imagePathPointer = imagePath.toNativeUtf8().cast<Char>();
 
-    Pointer<Int32> gridArray = _bindings
-        .extract_grid_from_roi(imagePathPointer, roiSize, roiOffset)
-        .cast<Int32>();
+    Pointer<Uint8> gridArray =
+        _bindings.extract_grid_from_roi(imagePathPointer, roiSize, roiOffset);
 
     // It is not clear, whether asTypeList gets handled from GC or not:
     // https://github.com/dart-lang/ffi/issues/22
     // https://github.com/dart-lang/sdk/issues/45508
     // Either way it is probably better to free c heap in native code.
-    List<int> gridList = List.from(gridArray.asTypedList(81), growable: false);
+    // List<int> gridList = List.from(gridArray.asTypedList(81), growable: false);
+    Uint8List gridList =
+        gridArray.asTypedList(81, finalizer: _bindings.free_pointerPtr);
 
     malloc.free(imagePathPointer);
-    _freePointer(gridArray);
+    // _freePointer(gridArray);
 
     return gridList;
   }

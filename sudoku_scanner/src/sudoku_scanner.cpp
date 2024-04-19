@@ -1,6 +1,7 @@
 #include "sudoku_scanner.h"
 
 #include <cassert>
+#include <cstdint>
 #include <cstdlib>
 #include <opencv2/imgcodecs.hpp>
 #include <opencv2/imgproc.hpp>
@@ -11,8 +12,8 @@
 #include "extraction/grid_extractor.hpp"
 #include "extraction/structs/cell.hpp"
 
-BoundingBox *detect_grid(char *path) {
-    BoundingBox *bb_ptr = (BoundingBox *)std::malloc(sizeof(BoundingBox));
+BoundingBox *detect_grid(const char *path) {
+    BoundingBox *bb_ptr = static_cast<BoundingBox *>(std::malloc(sizeof(BoundingBox)));
     cv::Mat mat = cv::imread(path);
     int width = mat.size().width;
     int height = mat.size().height;
@@ -36,7 +37,7 @@ BoundingBox *detect_grid(char *path) {
 }
 
 // TODO: try get image as byte array directly from dart
-int *extract_grid(char *path, BoundingBox *bounding_box) {
+std::uint8_t *extract_grid(const char *path, const BoundingBox *bounding_box) {
     assert(bounding_box->top_left.x >= 0 && bounding_box->top_left.y >= 0);
     assert(bounding_box->top_right.x > 0 && bounding_box->top_right.y >= 0);
     assert(bounding_box->bottom_left.x >= 0 && bounding_box->bottom_left.y > 0);
@@ -52,7 +53,7 @@ int *extract_grid(char *path, BoundingBox *bounding_box) {
 
     cv::Mat mat = cv::imread(path);
 
-    std::vector<int> grid = GridExtractor::extract_grid(
+    std::vector<std::uint8_t> grid = GridExtractor::extract_grid(
         mat,
         bounding_box->top_left.x * mat.size().width,
         bounding_box->top_left.y * mat.size().height,
@@ -64,8 +65,7 @@ int *extract_grid(char *path, BoundingBox *bounding_box) {
         bounding_box->bottom_right.y * mat.size().height);
     mat.release();
 
-    // TODO: use uint8_t instead of 32-bit int
-    int *grid_ptr = (int *)std::malloc(grid.size() * sizeof(int));
+    std::uint8_t *grid_ptr = static_cast<std::uint8_t *>(std::malloc(grid.size() * sizeof(std::uint8_t)));
 
     // copy grid_array to pointer
     for (int i = 0; i < grid.size(); ++i) {
@@ -76,11 +76,11 @@ int *extract_grid(char *path, BoundingBox *bounding_box) {
 }
 
 // TODO: try get image as byte array directly from dart
-int *extract_grid_from_roi(
-    char *path,
-    int roi_size,
+std::uint8_t *extract_grid_from_roi(
+    const char *path,
+    std::int32_t roi_size,
     // offset from center of image
-    int roi_offset) {
+    std::int32_t roi_offset) {
     cv::Mat image = cv::imread(path);
 
     assert(roi_size > 0 && roi_size <= image.size().width);
@@ -99,7 +99,7 @@ int *extract_grid_from_roi(
     std::vector<cv::Point> points = GridDetector::detect_grid(image);
     image.release();
 
-    std::vector<int> grid = GridExtractor::extract_grid(
+    std::vector<std::uint8_t> grid = GridExtractor::extract_grid(
         image_copy,
         points[0].x,
         points[0].y,
@@ -111,8 +111,7 @@ int *extract_grid_from_roi(
         points[3].y);
     image_copy.release();
 
-    // TODO: use uint8_t instead of 32-bit int
-    int *grid_ptr = (int *)std::malloc(grid.size() * sizeof(int));
+    std::uint8_t *grid_ptr = static_cast<std::uint8_t *>(std::malloc(grid.size() * sizeof(std::uint8_t)));
 
     // copy grid_array to pointer
     for (int i = 0; i < grid.size(); ++i) {
@@ -122,10 +121,10 @@ int *extract_grid_from_roi(
     return grid_ptr;
 }
 
-void set_model(char *path) {
+void set_model(const char *path) {
     setenv(PATH_TO_MODEL_ENV_VAR, path, 1);
 }
 
-void free_pointer(int *pointer) {
+void free_pointer(void *pointer) {
     free(pointer);
 }

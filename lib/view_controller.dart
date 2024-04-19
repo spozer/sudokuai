@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'view/camera_view.dart';
 import 'view/scanner_view.dart';
@@ -44,7 +46,7 @@ class _ViewControllerState extends State<ViewController> {
           onBack: _openCamera,
         );
       case ViewName.sudoku:
-        final Future<List<int>> valueList = currentView.args[0];
+        final Future<Uint8List> valueList = currentView.args[0];
         return SudokuView(
           valueList: valueList,
           openCamera: _openCamera,
@@ -76,5 +78,6 @@ class _ViewControllerState extends State<ViewController> {
     }
   }
 
-  void _showSudoku(Future<List<int>> sudokuGrid) => _setView(View(ViewName.sudoku, args: [sudokuGrid]));
+  void _showSudoku(Future<Uint8List> sudokuGrid) =>
+      _setView(View(ViewName.sudoku, args: [sudokuGrid]));
 }

@@ -1,10 +1,12 @@
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:tuple/tuple.dart';
 import '../grid/sudoku_grid.dart';
 
 class SudokuView extends StatefulWidget {
-  final Future<List<int>> valueList;
+  final Future<Uint8List> valueList;
   final void Function() openCamera;
 
   const SudokuView({
@@ -52,13 +54,18 @@ class _SudokuViewState extends State<SudokuView> {
     var numberKeyboardOffset = screenHeight * 0.05;
 
     // Check for overflow of number keyboard.
-    if (statusBarHeight + sudokuGridOffset + sudokuGridSize + numberKeyboardSize + numberKeyboardOffset >
+    if (statusBarHeight +
+            sudokuGridOffset +
+            sudokuGridSize +
+            numberKeyboardSize +
+            numberKeyboardOffset >
         screenHeight) {
       numberKeyboardSize = screenWidth * 0.45;
       numberKeyboardOffset = screenHeight * 0.02;
     }
 
-    final deleteButtonYOffset = numberKeyboardOffset + numberKeyboardSize * 0.04;
+    final deleteButtonYOffset =
+        numberKeyboardOffset + numberKeyboardSize * 0.04;
     final deleteButtonXOffset = numberKeyboardSize + screenWidth * 0.22;
 
     return PopScope(
@@ -68,8 +75,10 @@ class _SudokuViewState extends State<SudokuView> {
           value: sudokuGrid,
           child: Stack(
             children: <Widget>[
-              _getTopBar(topBarHeight, topBarWidth, statusBarHeight + topBarOffset),
-              _getSudokuGrid(sudokuGridSize, statusBarHeight + sudokuGridOffset),
+              _getTopBar(
+                  topBarHeight, topBarWidth, statusBarHeight + topBarOffset),
+              _getSudokuGrid(
+                  sudokuGridSize, statusBarHeight + sudokuGridOffset),
               _getNumberKeyboard(numberKeyboardSize, numberKeyboardOffset),
               _getActionButtons(deleteButtonYOffset, deleteButtonXOffset),
             ],
@@ -130,7 +139,8 @@ class _SudokuViewState extends State<SudokuView> {
                       padding: const EdgeInsets.all(7.0),
                       decoration: BoxDecoration(
                         color: color,
-                        borderRadius: const BorderRadius.all(Radius.circular(5)),
+                        borderRadius:
+                            const BorderRadius.all(Radius.circular(5)),
                       ),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
