@@ -1,17 +1,18 @@
 #include <opencv2/imgproc/types_c.h>
 #include <tensorflow/lite/c/c_api.h>
 
+#include <cstdint>
 #include <cstdio>
 #include <memory>
 #include <opencv2/highgui.hpp>
 #include <opencv2/imgproc.hpp>
 
-#include "../src/detection/grid_detector.hpp"
-#include "../src/extraction/grid_extractor.hpp"
-#include "../src/sudoku_scanner.h"
+#include "detection/grid_detector.hpp"
+#include "extraction/grid_extractor.hpp"
+#include "sudoku_scanner.h"
 
-const std::string IMAGE_PATH = "../../test/images/25.jpg";
-const std::string MODEL_PATH = "../../assets/model.tflite";
+const std::string IMAGE_PATH = std::string(CMAKE_IMAGES_PATH) + "/26.jpg";
+const std::string MODEL_PATH = std::string(CMAKE_ASSETS_PATH) + "/model.tflite";
 const int RESOLUTION = 480;
 
 void print_info() {
@@ -40,7 +41,7 @@ void print_info() {
     printf("\n\n");
 }
 
-void print_sudoku_grid(const std::vector<int> &grid) {
+void print_sudoku_grid(const std::vector<std::uint8_t> &grid) {
     for (int i = 0; i < grid.size(); ++i) {
         if (i % 9 == 0) {
             printf("\n");
@@ -85,7 +86,7 @@ int main() {
         cv::Point(bb->bottom_right.x * image.cols, bb->bottom_right.y * image.rows),
         cv::Point(bb->bottom_left.x * image.cols, bb->bottom_left.y * image.rows)};
 
-    std::vector<int> grid = GridExtractor::extract_grid(
+    std::vector<std::uint8_t> grid = GridExtractor::extract_grid(
         image,
         bb->top_left.x * image.size().width,
         bb->top_left.y * image.size().height,

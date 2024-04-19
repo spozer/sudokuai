@@ -29,7 +29,9 @@ migrate_working_dir/
 build/
 
 # Custom
+includes/
 android/src/main/jniLibs/**
-linux/libs/**
+dev/external/opencv
+dev/external/tensorflowlite
+dev/images
 assets/**
-test/images/**

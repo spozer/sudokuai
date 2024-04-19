@@ -9,13 +9,10 @@ include(FetchContent)
 FetchContent_Declare(
 	googletest
 	URL https://github.com/google/googletest/archive/03597a01ee50ed33e9dfd640b249b4be3799d395.zip
+	DOWNLOAD_EXTRACT_TIMESTAMP OFF
 )
 
 FetchContent_MakeAvailable(googletest)
-
-enable_testing()
-
-add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/../linux" "${CMAKE_CURRENT_BINARY_DIR}/sudoku_scanner")
 
 add_executable(
 	integration_test
