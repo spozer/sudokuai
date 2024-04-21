@@ -3,12 +3,13 @@ import 'dart:io';
 import 'dart:typed_data';
 import 'dart:ui' show Offset;
 import 'package:ffi/ffi.dart';
+import 'package:flutter/foundation.dart' show compute;
 import 'package:path_provider/path_provider.dart';
 import 'package:flutter/services.dart' show rootBundle;
 import 'bounding_box.dart';
 import 'sudoku_scanner_bindings_generated.dart' as native;
 
-// TODO: use Isolate.run() instead of compute() for longer tasks
+const String _libName = 'sudoku_scanner';
 
 class SudokuScanner {
   static late final native.SudokuScannerBindings _bindings;
@@ -39,16 +40,22 @@ class SudokuScanner {
           'Unsupported platform: ${Platform.operatingSystem}');
     }
 
-    /// The dynamic library in which the symbols for [SudokuScannerBindings] can be found.
-    final DynamicLibrary dylib = DynamicLibrary.open('libsudoku_scanner.so');
-
-    /// The bindings to the native functions in [_dylib].
-    _bindings = native.SudokuScannerBindings(dylib);
+    _bindings = _getBindings();
 
     _setModel(tfliteModelPath);
   }
 
-  static Future<void> _setModel(String path) async {
+  static native.SudokuScannerBindings _getBindings() {
+    /// The dynamic library in which the symbols for [SudokuScannerBindings] can be found.
+    final DynamicLibrary dylib = DynamicLibrary.open('lib$_libName.so');
+
+    /// The bindings to the native functions in [_dylib].
+    final bindings = native.SudokuScannerBindings(dylib);
+
+    return bindings;
+  }
+
+  static void _setModel(String path) {
     final pathPointer = path.toNativeUtf8().cast<Char>();
     _bindings.set_model(pathPointer);
     malloc.free(pathPointer);
@@ -59,9 +66,20 @@ class SudokuScanner {
   }
 
   static Future<BoundingBox> detectGrid(String imagePath) async {
-    final imagePathPointer = imagePath.toNativeUtf8().cast<Char>();
+    final nativeboundingBoxAdress = await compute((_) {
+      // [DynamicLibrary] can't be passed through Isolate Ports, so we need to create new one
+      final bindings = _getBindings();
 
-    final nativeBoundingBoxPointer = _bindings.detect_grid(imagePathPointer);
+      final imagePathPointer = imagePath.toNativeUtf8().cast<Char>();
+
+      final nativeBoundingBoxPointer = bindings.detect_grid(imagePathPointer);
+      malloc.free(imagePathPointer);
+
+      return nativeBoundingBoxPointer.address;
+    }, null);
+
+    final nativeBoundingBoxPointer =
+        Pointer<native.BoundingBox>.fromAddress(nativeboundingBoxAdress);
     final nbb = nativeBoundingBoxPointer.ref;
     final bb = BoundingBox(
       topLeft: Offset(nbb.top_left.x, nbb.top_left.y),
@@ -70,8 +88,6 @@ class SudokuScanner {
       bottomRight: Offset(nbb.bottom_right.x, nbb.bottom_right.y),
     );
 
-    malloc.free(imagePathPointer);
-    // malloc.free(nativeBoundingBoxPointer);
     _freePointer(nativeBoundingBoxPointer);
 
     return bb;
@@ -79,54 +95,60 @@ class SudokuScanner {
 
   static Future<Uint8List> extractGrid(
       String imagePath, BoundingBox boundingBox) async {
-    final imagePathPointer = imagePath.toNativeUtf8().cast<Char>();
-    final nativeBoundingBoxPointer = malloc<native.BoundingBox>();
+    final gridArrayAddress = await compute((_) {
+      // [DynamicLibrary] can't be passed through Isolate Ports, so we need to create new one
+      final bindings = _getBindings();
 
-    nativeBoundingBoxPointer.ref
-      ..top_left.x = boundingBox.topLeft.dx
-      ..top_left.y = boundingBox.topLeft.dy
-      ..top_right.x = boundingBox.topRight.dx
-      ..top_right.y = boundingBox.topRight.dy
-      ..bottom_left.x = boundingBox.bottomLeft.dx
-      ..bottom_left.y = boundingBox.bottomLeft.dy
-      ..bottom_right.x = boundingBox.bottomRight.dx
-      ..bottom_right.y = boundingBox.bottomRight.dy;
+      final imagePathPointer = imagePath.toNativeUtf8().cast<Char>();
+      final nativeBoundingBoxPointer = malloc<native.BoundingBox>();
 
-    Pointer<Uint8> gridArray =
-        _bindings.extract_grid(imagePathPointer, nativeBoundingBoxPointer);
+      nativeBoundingBoxPointer.ref
+        ..top_left.x = boundingBox.topLeft.dx
+        ..top_left.y = boundingBox.topLeft.dy
+        ..top_right.x = boundingBox.topRight.dx
+        ..top_right.y = boundingBox.topRight.dy
+        ..bottom_left.x = boundingBox.bottomLeft.dx
+        ..bottom_left.y = boundingBox.bottomLeft.dy
+        ..bottom_right.x = boundingBox.bottomRight.dx
+        ..bottom_right.y = boundingBox.bottomRight.dy;
 
-    // It is not clear, whether asTypeList gets handled from GC or not:
-    // https://github.com/dart-lang/ffi/issues/22
-    // https://github.com/dart-lang/sdk/issues/45508
-    // Either way it is probably better to free c heap in native code.
-    // List<int> gridList = List.from(gridArray.asTypedList(81), growable: false);
-    Uint8List gridList =
+      Pointer<Uint8> gridArray =
+          bindings.extract_grid(imagePathPointer, nativeBoundingBoxPointer);
+
+      malloc.free(imagePathPointer);
+      malloc.free(nativeBoundingBoxPointer);
+
+      return gridArray.address;
+    }, null);
+
+    final gridArray = Pointer<Uint8>.fromAddress(gridArrayAddress);
+
+    final gridList =
         gridArray.asTypedList(81, finalizer: _bindings.free_pointerPtr);
-
-    malloc.free(imagePathPointer);
-    malloc.free(nativeBoundingBoxPointer);
-    // _freePointer(gridArray);
 
     return gridList;
   }
 
   static Future<Uint8List> extractGridfromRoi(
       String imagePath, int roiSize, int roiOffset) async {
-    final imagePathPointer = imagePath.toNativeUtf8().cast<Char>();
+    final gridArrayAddress = await compute((_) {
+      // [DynamicLibrary] can't be passed through Isolate Ports, so we need to create new one
+      final bindings = _getBindings();
 
-    Pointer<Uint8> gridArray =
-        _bindings.extract_grid_from_roi(imagePathPointer, roiSize, roiOffset);
+      final imagePathPointer = imagePath.toNativeUtf8().cast<Char>();
 
-    // It is not clear, whether asTypeList gets handled from GC or not:
-    // https://github.com/dart-lang/ffi/issues/22
-    // https://github.com/dart-lang/sdk/issues/45508
-    // Either way it is probably better to free c heap in native code.
-    // List<int> gridList = List.from(gridArray.asTypedList(81), growable: false);
-    Uint8List gridList =
+      final gridArray =
+          bindings.extract_grid_from_roi(imagePathPointer, roiSize, roiOffset);
+
+      malloc.free(imagePathPointer);
+
+      return gridArray.address;
+    }, null);
+
+    final gridArray = Pointer<Uint8>.fromAddress(gridArrayAddress);
+
+    final gridList =
         gridArray.asTypedList(81, finalizer: _bindings.free_pointerPtr);
-
-    malloc.free(imagePathPointer);
-    // _freePointer(gridArray);
 
     return gridList;
   }
