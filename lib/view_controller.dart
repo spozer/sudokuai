@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
@@ -15,7 +16,6 @@ class ViewController extends StatefulWidget {
 
 enum ViewName {
   camera,
-  gallery,
   scanner,
   sudoku,
 }
@@ -36,8 +36,6 @@ class _ViewControllerState extends State<ViewController> {
     switch (currentView.name) {
       case ViewName.camera:
         return CameraView(scanImage: _scanImage);
-      case ViewName.gallery:
-        return Container();
       case ViewName.scanner:
         final String imagePath = currentView.args[0];
         return ScannerView(
@@ -62,14 +60,18 @@ class _ViewControllerState extends State<ViewController> {
     }
   }
 
-  // Various callback functions.
+  // Callback
   void _openCamera() => _setView(View(ViewName.camera));
-  void _openGallery() => _setView(View(ViewName.gallery));
 
   void _scanImage(String imagePath, {int? roiSize, int? roiOffset}) {
     if (roiSize != null && roiOffset != null) {
       _setView(View(ViewName.sudoku, args: [
-        SudokuScanner.extractGridfromRoi(imagePath, roiSize, roiOffset),
+        SudokuScanner.extractGridfromRoi(imagePath, roiSize, roiOffset)
+            .then((valueList) {
+          // delete image from cache
+          File(imagePath).delete();
+          return valueList;
+        }),
       ]));
     } else {
       _setView(View(ViewName.scanner, args: [

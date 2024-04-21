@@ -181,7 +181,12 @@ class _ScannerViewState extends State<ScannerView> {
                 final boundingBox =
                     BoundingBox.fromPoints(relativePoints, previewSize!);
                 final valueList =
-                    SudokuScanner.extractGrid(widget.imagePath, boundingBox);
+                    SudokuScanner.extractGrid(widget.imagePath, boundingBox)
+                        .then((valueList) {
+                  // delete image from cache
+                  File(widget.imagePath).delete();
+                  return valueList;
+                });
 
                 widget.showSudoku(valueList);
               },
