@@ -22,6 +22,11 @@ class SudokuScanner {
   /// decode the model first and save it then to the app's folder. This only
   /// needs to be done once.
   static Future<void> init() async {
+    if (!Platform.isAndroid) {
+      throw UnsupportedError(
+          'Unsupported platform: ${Platform.operatingSystem}');
+    }
+
     final extDir = await getExternalStorageDirectory();
     final tfliteModelPath = "${extDir!.path}/model.tflite";
 
@@ -33,11 +38,6 @@ class SudokuScanner {
         tfliteModel.offsetInBytes,
         tfliteModel.lengthInBytes,
       ));
-    }
-
-    if (!Platform.isAndroid) {
-      throw UnsupportedError(
-          'Unsupported platform: ${Platform.operatingSystem}');
     }
 
     _bindings = _getBindings();

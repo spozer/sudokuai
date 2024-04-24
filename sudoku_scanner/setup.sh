@@ -3,6 +3,7 @@
 # This script downloads the needed jni libs and headers for this project
 
 TF_URL="https://repo1.maven.org/maven2/org/tensorflow/tensorflow-lite/2.15.0/tensorflow-lite-2.15.0.aar"
+TF_GPU_URL="https://repo1.maven.org/maven2/org/tensorflow/tensorflow-lite-gpu/2.15.0/tensorflow-lite-gpu-2.15.0.aar"
 CV_URL="https://github.com/opencv/opencv/releases/download/4.9.0/opencv-4.9.0-android-sdk.zip"
 # TODO also download model.tflite from github page and move to assets
 MODEL_URL="https://github.com/spozer/sudokuai/releases/download/-------"
@@ -45,7 +46,7 @@ function setup {
     printf "Extracting $name\n"
     unzip -q ../"$name.zip" $include_dir/* $lib_dir/*
     printf "Moving headers and lib for $name\n"
-    mv $include_dir/* $INCLUDE_DIR
+    cp -r $include_dir/* $INCLUDE_DIR
     mv $lib_dir/arm64-v8a/* $JNI_DIR/arm64-v8a
     mv $lib_dir/armeabi-v7a/* $JNI_DIR/armeabi-v7a
     mv $lib_dir/x86/* $JNI_DIR/x86
@@ -58,6 +59,7 @@ function setup {
 TF_INCLUDE_DIR="headers"
 TF_LIB_DIR="jni"
 setup "tflite" $TF_URL $TF_INCLUDE_DIR $TF_LIB_DIR
+setup "tflite_gpu" $TF_GPU_URL $TF_INCLUDE_DIR $TF_LIB_DIR
 
 # OpenCV
 # paths inside zip archive

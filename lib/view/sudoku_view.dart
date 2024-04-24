@@ -189,7 +189,10 @@ class _SudokuViewState extends State<SudokuView> {
                 if (snapshot.connectionState == ConnectionState.done) {
                   return SudokuGridWidget(size: size * 0.96);
                 } else {
-                  return const Center(child: CircularProgressIndicator());
+                  return const Center(
+                      child: CircularProgressIndicator(
+                    color: Colors.black,
+                  ));
                 }
               },
             )),

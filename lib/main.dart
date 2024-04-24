@@ -7,9 +7,6 @@ void main() async {
   // Ensure that plugin services are initialized.
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Initialize Bridge.
-  SudokuScanner.init();
-
   // Show Status and Navigation Bar.
   SystemChrome.setEnabledSystemUIMode(
     SystemUiMode.manual,
@@ -24,6 +21,9 @@ void main() async {
     DeviceOrientation.portraitUp,
     DeviceOrientation.portraitDown,
   ]);
+
+  // Initialize SudokuScanner
+  await SudokuScanner.init();
 
   runApp(MaterialApp(
     theme: ThemeData(

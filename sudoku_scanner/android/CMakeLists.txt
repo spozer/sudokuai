@@ -21,8 +21,12 @@ add_library(tensorflowlite_c SHARED IMPORTED)
 set_target_properties(tensorflowlite_c PROPERTIES
     IMPORTED_LOCATION ${CMAKE_CURRENT_SOURCE_DIR}/src/main/jniLibs/${ANDROID_ABI}/libtensorflowlite_jni.so)
 
+add_library(tensorflowlite_gpu SHARED IMPORTED)
+set_target_properties(tensorflowlite_gpu PROPERTIES
+    IMPORTED_LOCATION ${CMAKE_CURRENT_SOURCE_DIR}/src/main/jniLibs/${ANDROID_ABI}/libtensorflowlite_gpu_jni.so)
+
 # Android Log
 find_library(log-lib log)
 
-target_link_libraries(sudoku_scanner opencv tensorflowlite_c ${log-lib})
+target_link_libraries(sudoku_scanner opencv tensorflowlite_c tensorflowlite_gpu ${log-lib})
 

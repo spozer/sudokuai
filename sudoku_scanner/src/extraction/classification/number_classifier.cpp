@@ -1,6 +1,7 @@
 #include "number_classifier.hpp"
 
 #include <tensorflow/lite/c/c_api.h>
+#include <tensorflow/lite/delegates/gpu/delegate.h>
 
 #include <opencv2/imgproc.hpp>
 #include <string>
@@ -13,21 +14,32 @@
 #include <android/log.h>
 #endif
 
-// TODO: use tflite with gpu delegates https://www.tensorflow.org/lite/android/delegates/gpu_native#java
-// https://central.sonatype.com/artifact/org.tensorflow/tensorflow-lite-gpu/2.6.0/versions
-
 void NumberClassifier::predict_numbers(std::vector<Cell> &cells) {
     cv::Mat input;
     std::vector<float> output(9, 0.0);
     std::string path_to_model = std::getenv(PATH_TO_MODEL_ENV_VAR);
 
-    // create the model and interpreter options
-    TfLiteModel *model = TfLiteModelCreateFromFile(path_to_model.data());
+    // create GPU delegate and interpreter options
+    TfLiteGpuDelegateOptionsV2 gpu_options = TfLiteGpuDelegateOptionsV2Default();
+    // force OpenCL only, because lower accuracy with OpenGL
+    gpu_options.experimental_flags |= TFLITE_GPU_EXPERIMENTAL_FLAGS_CL_ONLY;
+    TfLiteDelegate *delegate = TfLiteGpuDelegateV2Create(&gpu_options);
     TfLiteInterpreterOptions *options = TfLiteInterpreterOptionsCreate();
-    TfLiteInterpreterOptionsSetNumThreads(options, 2);
+    TfLiteInterpreterOptionsAddDelegate(options, delegate);
+
+    // create the model
+    TfLiteModel *model = TfLiteModelCreateFromFile(path_to_model.data());
 
     // create the interpreter
     TfLiteInterpreter *interpreter = TfLiteInterpreterCreate(model, options);
+
+    // if no gpu was found try with default options
+    if (!interpreter) {
+        TfLiteInterpreterOptionsDelete(options);
+        options = TfLiteInterpreterOptionsCreate();
+        TfLiteInterpreterOptionsSetNumThreads(options, 2);
+        interpreter = TfLiteInterpreterCreate(model, options);
+    }
 
     // allocate tensors
     TfLiteInterpreterAllocateTensors(interpreter);
@@ -62,6 +74,7 @@ void NumberClassifier::predict_numbers(std::vector<Cell> &cells) {
     // dispose of the model and interpreter objects
     TfLiteInterpreterDelete(interpreter);
     TfLiteInterpreterOptionsDelete(options);
+    TfLiteGpuDelegateV2Delete(delegate);
     TfLiteModelDelete(model);
 }
 

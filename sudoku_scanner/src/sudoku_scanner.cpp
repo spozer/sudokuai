@@ -1,5 +1,6 @@
 #include "sudoku_scanner.h"
 
+#include <algorithm>
 #include <cassert>
 #include <cstdint>
 #include <cstdlib>
@@ -67,10 +68,7 @@ std::uint8_t *extract_grid(const char *path, const BoundingBox *bounding_box) {
 
     std::uint8_t *grid_ptr = static_cast<std::uint8_t *>(std::malloc(grid.size() * sizeof(std::uint8_t)));
 
-    // copy grid_array to pointer
-    for (int i = 0; i < grid.size(); ++i) {
-        grid_ptr[i] = grid[i];
-    }
+    std::copy(grid.begin(), grid.end(), grid_ptr);
 
     return grid_ptr;
 }
@@ -113,10 +111,7 @@ std::uint8_t *extract_grid_from_roi(
 
     std::uint8_t *grid_ptr = static_cast<std::uint8_t *>(std::malloc(grid.size() * sizeof(std::uint8_t)));
 
-    // copy grid_array to pointer
-    for (int i = 0; i < grid.size(); ++i) {
-        grid_ptr[i] = grid[i];
-    }
+    std::copy(grid.begin(), grid.end(), grid_ptr);
 
     return grid_ptr;
 }

@@ -316,7 +316,9 @@ class CameraViewState extends State<CameraView> with WidgetsBindingObserver {
                 alignment: Alignment.center,
                 // Display loading indicator while taking a picture.
                 child: _isTakingPicture
-                    ? const CircularProgressIndicator()
+                    ? const CircularProgressIndicator(
+                        color: Colors.white,
+                      )
                     : Container(),
               ),
               Align(

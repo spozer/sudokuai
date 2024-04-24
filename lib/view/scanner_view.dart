@@ -157,7 +157,11 @@ class _ScannerViewState extends State<ScannerView> {
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: <Widget>[
             ElevatedButton(
-              onPressed: widget.onBack,
+              onPressed: () {
+                // delete image from cache
+                File(widget.imagePath).delete();
+                return widget.onBack();
+              },
               style: ElevatedButton.styleFrom(
                 fixedSize: buttonSize,
                 backgroundColor: const Color.fromARGB(255, 102, 102, 102),
