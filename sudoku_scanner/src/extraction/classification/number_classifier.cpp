@@ -1,7 +1,7 @@
 #include "number_classifier.hpp"
 
 #include <tensorflow/lite/c/c_api.h>
-#include <tensorflow/lite/delegates/gpu/delegate.h>
+#include <tensorflow/lite/delegates/nnapi/nnapi_delegate_c_api.h>
 
 #include <opencv2/imgproc.hpp>
 #include <string>
@@ -19,11 +19,8 @@ void NumberClassifier::predict_numbers(std::vector<Cell> &cells) {
     std::vector<float> output(9, 0.0);
     std::string path_to_model = std::getenv(PATH_TO_MODEL_ENV_VAR);
 
-    // create GPU delegate and interpreter options
-    TfLiteGpuDelegateOptionsV2 gpu_options = TfLiteGpuDelegateOptionsV2Default();
-    // force OpenCL only, because lower accuracy with OpenGL
-    gpu_options.experimental_flags |= TFLITE_GPU_EXPERIMENTAL_FLAGS_CL_ONLY;
-    TfLiteDelegate *delegate = TfLiteGpuDelegateV2Create(&gpu_options);
+    TfLiteNnapiDelegateOptions nnapi_options = TfLiteNnapiDelegateOptionsDefault();
+    TfLiteDelegate *delegate = TfLiteNnapiDelegateCreate(&nnapi_options);
     TfLiteInterpreterOptions *options = TfLiteInterpreterOptionsCreate();
     TfLiteInterpreterOptionsAddDelegate(options, delegate);
 
@@ -33,11 +30,11 @@ void NumberClassifier::predict_numbers(std::vector<Cell> &cells) {
     // create the interpreter
     TfLiteInterpreter *interpreter = TfLiteInterpreterCreate(model, options);
 
-    // if no gpu was found try with default options
+    // fallback to no delegate
     if (!interpreter) {
         TfLiteInterpreterOptionsDelete(options);
         options = TfLiteInterpreterOptionsCreate();
-        TfLiteInterpreterOptionsSetNumThreads(options, 2);
+        TfLiteInterpreterOptionsSetNumThreads(options, 4);
         interpreter = TfLiteInterpreterCreate(model, options);
     }
 
@@ -74,7 +71,7 @@ void NumberClassifier::predict_numbers(std::vector<Cell> &cells) {
     // dispose of the model and interpreter objects
     TfLiteInterpreterDelete(interpreter);
     TfLiteInterpreterOptionsDelete(options);
-    TfLiteGpuDelegateV2Delete(delegate);
+    TfLiteNnapiDelegateDelete(delegate);
     TfLiteModelDelete(model);
 }
 

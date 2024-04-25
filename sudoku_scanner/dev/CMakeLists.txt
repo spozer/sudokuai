@@ -31,6 +31,5 @@ target_link_libraries(sudoku_scanner PRIVATE
 	opencv_imgcodecs
 	opencv_highgui
 	tensorflowlite_c
-	tensorflowlite_gpu
 )
 

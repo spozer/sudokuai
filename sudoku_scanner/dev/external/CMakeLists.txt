@@ -35,8 +35,3 @@ set_target_properties(opencv_flann PROPERTIES
 add_library(tensorflowlite_c SHARED IMPORTED GLOBAL)
 set_target_properties(tensorflowlite_c PROPERTIES
 	IMPORTED_LOCATION ${CMAKE_CURRENT_SOURCE_DIR}/tensorflowlite/libtensorflowlite_c.so)
-
-add_library(tensorflowlite_gpu SHARED IMPORTED GLOBAL)
-set_target_properties(tensorflowlite_gpu PROPERTIES
-	IMPORTED_LOCATION ${CMAKE_CURRENT_SOURCE_DIR}/tensorflowlite/libtensorflowlite_gpu_delegate.so)
-
