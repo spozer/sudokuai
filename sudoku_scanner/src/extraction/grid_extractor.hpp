@@ -6,16 +6,17 @@
 #include <vector>
 
 #include "structs/cell.hpp"
+#include "structs/grid.hpp"
 
 class GridExtractor {
    public:
-    static std::vector<std::uint8_t> extract_grid(cv::Mat &img, float x1, float y1, float x2, float y2, float x3, float y3, float x4, float y4);
+    static Grid extract_grid(cv::Mat &img, float x1, float y1, float x2, float y2, float x3, float y3, float x4, float y4);
 
    private:
     GridExtractor() = delete;
     static void crop_and_transform(cv::Mat &img, float x1, float y1, float x2, float y2, float x3, float y3, float x4, float y4);
     static void remove_grid_lines(cv::Mat &binary);
-    static std::vector<std::uint8_t> cells_to_array(std::vector<Cell> &cells);
+    static Grid cells_to_grid(std::vector<Cell> &cells);
     static void flood_fill_white(cv::Mat &binary, std::vector<cv::Point> &points, int x, int y);
     static bool extract_number(cv::Mat &binary, cv::Rect &output, cv::Point &center);
     static void make_square(cv::Rect &rect, int pad_size);

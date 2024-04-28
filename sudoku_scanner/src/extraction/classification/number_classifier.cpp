@@ -20,6 +20,7 @@ void NumberClassifier::predict_numbers(std::vector<Cell> &cells) {
     std::string path_to_model = std::getenv(PATH_TO_MODEL_ENV_VAR);
 
     TfLiteNnapiDelegateOptions nnapi_options = TfLiteNnapiDelegateOptionsDefault();
+    nnapi_options.execution_preference = TfLiteNnapiDelegateOptions::ExecutionPreference::kSustainedSpeed;
     TfLiteDelegate *delegate = TfLiteNnapiDelegateCreate(&nnapi_options);
     TfLiteInterpreterOptions *options = TfLiteInterpreterOptionsCreate();
     TfLiteInterpreterOptionsAddDelegate(options, delegate);

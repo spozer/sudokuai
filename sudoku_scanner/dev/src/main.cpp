@@ -9,6 +9,7 @@
 
 #include "detection/grid_detector.hpp"
 #include "extraction/grid_extractor.hpp"
+#include "extraction/structs/grid.hpp"
 #include "sudoku_scanner.h"
 
 const std::string IMAGE_PATH = std::string(CMAKE_IMAGES_PATH) + "/26.jpg";
@@ -74,19 +75,13 @@ int main() {
     }
 
     // init tflite model
-    set_model((char *)MODEL_PATH.c_str());
+    set_model(MODEL_PATH.c_str());
 
     // bounding box
-    std::unique_ptr<BoundingBox> bb(detect_grid((char *)IMAGE_PATH.c_str()));
+    std::unique_ptr<BoundingBox> bb(detect_grid(IMAGE_PATH.c_str()));
     printf("%f %f\n", bb->bottom_left.x, bb->bottom_left.y);
 
-    std::vector<cv::Point> pts{
-        cv::Point(bb->top_left.x * image.cols, bb->top_left.y * image.rows),
-        cv::Point(bb->top_right.x * image.cols, bb->top_right.y * image.rows),
-        cv::Point(bb->bottom_right.x * image.cols, bb->bottom_right.y * image.rows),
-        cv::Point(bb->bottom_left.x * image.cols, bb->bottom_left.y * image.rows)};
-
-    std::vector<std::uint8_t> grid = GridExtractor::extract_grid(
+    Grid grid = GridExtractor::extract_grid(
         image,
         bb->top_left.x * image.size().width,
         bb->top_left.y * image.size().height,
@@ -97,14 +92,15 @@ int main() {
         bb->bottom_right.x * image.size().width,
         bb->bottom_right.y * image.size().height);
 
-    print_sudoku_grid(grid);
+    auto grid_ptr = grid.get_ownership();
+    std::vector<std::uint8_t> grid_vec(grid_ptr, grid_ptr + grid.size);
+    print_sudoku_grid(grid_vec);
 
     cv::waitKey(0);
 
-    // std::unique_ptr<int> bbroi(extract_grid_from_roi((char *)IMAGE_PATH.c_str(), (src_width < src_height) ? src_width : src_height, 0));
-    // std::vector<int> grid2(bbroi.get(), bbroi.get() + 81);
-
-    // print_sudoku_grid(grid2);
+    // std::unique_ptr<std::uint8_t> bbroi(extract_grid_from_roi(IMAGE_PATH.c_str(), (src_width < src_height) ? src_width : src_height, 0));
+    // std::vector<std::uint8_t> grid2_vec(bbroi.get(), bbroi.get() + 81);
+    // print_sudoku_grid(grid2_vec);
 
     // cv::waitKey(0);
 

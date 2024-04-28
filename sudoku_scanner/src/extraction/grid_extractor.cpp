@@ -13,7 +13,7 @@
 const int GRID_SIZE = 450;
 const int CELL_SIZE = GRID_SIZE / 9;
 
-std::vector<std::uint8_t> GridExtractor::extract_grid(cv::Mat &img, float x1, float y1, float x2, float y2, float x3, float y3, float x4, float y4) {
+Grid GridExtractor::extract_grid(cv::Mat &img, float x1, float y1, float x2, float y2, float x3, float y3, float x4, float y4) {
     cv::Mat thresholded;
     cv::cvtColor(img, img, cv::COLOR_BGR2GRAY);
     crop_and_transform(img, x1, y1, x2, y2, x3, y3, x4, y4);
@@ -35,7 +35,7 @@ std::vector<std::uint8_t> GridExtractor::extract_grid(cv::Mat &img, float x1, fl
 #endif
     NumberClassifier::predict_numbers(cells);
 
-    return cells_to_array(cells);
+    return cells_to_grid(cells);
 }
 
 void GridExtractor::crop_and_transform(cv::Mat &img, float x1, float y1, float x2, float y2, float x3, float y3, float x4, float y4) {
@@ -84,15 +84,14 @@ void GridExtractor::remove_grid_lines(cv::Mat &binary) {
 #endif
 }
 
-std::vector<std::uint8_t> GridExtractor::cells_to_array(std::vector<Cell> &cells) {
-    std::vector<std::uint8_t> array(9 * 9, 0);
-    // std::uint8_t *array = static_cast<std::uint8_t *>(std::malloc(81 * sizeof(std::uint8_t)));
+Grid GridExtractor::cells_to_grid(std::vector<Cell> &cells) {
+    Grid grid;
 
     for (Cell &cell : cells) {
-        array[cell.x + 9 * cell.y] = cell.number;
+        grid[cell.x + 9 * cell.y] = cell.number;
     }
 
-    return array;
+    return grid;
 }
 
 void GridExtractor::flood_fill_white(cv::Mat &binary, std::vector<cv::Point> &points, int x, int y) {
@@ -211,7 +210,7 @@ std::vector<Cell> GridExtractor::extract_cells(cv::Mat &binary, cv::Mat &img) {
                 // cv::rectangle(img, bounding_box, cv::Scalar(0, 255, 0));  // debug TODO delete
                 make_square(bounding_box, 2);
                 cv::Mat number_img = img(bounding_box);
-                cells.push_back(Cell(number_img, x, y));
+                cells.emplace_back(number_img, x, y);
             }
         }
     }

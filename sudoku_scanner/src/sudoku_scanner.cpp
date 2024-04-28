@@ -1,6 +1,5 @@
 #include "sudoku_scanner.h"
 
-#include <algorithm>
 #include <cassert>
 #include <cstdint>
 #include <cstdlib>
@@ -12,6 +11,7 @@
 #include "dictionary/dictionary.hpp"
 #include "extraction/grid_extractor.hpp"
 #include "extraction/structs/cell.hpp"
+#include "extraction/structs/grid.hpp"
 
 BoundingBox *detect_grid(const char *path) {
     BoundingBox *bb_ptr = static_cast<BoundingBox *>(std::malloc(sizeof(BoundingBox)));
@@ -54,7 +54,7 @@ std::uint8_t *extract_grid(const char *path, const BoundingBox *bounding_box) {
 
     cv::Mat mat = cv::imread(path);
 
-    std::vector<std::uint8_t> grid = GridExtractor::extract_grid(
+    Grid grid = GridExtractor::extract_grid(
         mat,
         bounding_box->top_left.x * mat.size().width,
         bounding_box->top_left.y * mat.size().height,
@@ -66,11 +66,7 @@ std::uint8_t *extract_grid(const char *path, const BoundingBox *bounding_box) {
         bounding_box->bottom_right.y * mat.size().height);
     mat.release();
 
-    std::uint8_t *grid_ptr = static_cast<std::uint8_t *>(std::malloc(grid.size() * sizeof(std::uint8_t)));
-
-    std::copy(grid.begin(), grid.end(), grid_ptr);
-
-    return grid_ptr;
+    return grid.get_ownership();
 }
 
 // TODO: try get image as byte array directly from dart
@@ -97,7 +93,7 @@ std::uint8_t *extract_grid_from_roi(
     std::vector<cv::Point> points = GridDetector::detect_grid(image);
     image.release();
 
-    std::vector<std::uint8_t> grid = GridExtractor::extract_grid(
+    Grid grid = GridExtractor::extract_grid(
         image_copy,
         points[0].x,
         points[0].y,
@@ -109,11 +105,7 @@ std::uint8_t *extract_grid_from_roi(
         points[3].y);
     image_copy.release();
 
-    std::uint8_t *grid_ptr = static_cast<std::uint8_t *>(std::malloc(grid.size() * sizeof(std::uint8_t)));
-
-    std::copy(grid.begin(), grid.end(), grid_ptr);
-
-    return grid_ptr;
+    return grid.get_ownership();
 }
 
 void set_model(const char *path) {
