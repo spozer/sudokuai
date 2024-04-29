@@ -93,7 +93,7 @@ int main() {
         bb->bottom_right.y * image.size().height);
 
     // makes copy
-    std::vector<std::uint8_t> grid_vec(grid.data, grid.data + grid.size);
+    std::vector<std::uint8_t> grid_vec(grid.data.get(), grid.data.get() + grid.size);
     print_sudoku_grid(grid_vec);
 
     cv::waitKey(0);

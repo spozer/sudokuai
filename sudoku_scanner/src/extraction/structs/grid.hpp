@@ -1,74 +1,34 @@
 #ifndef GRID_HPP
 #define GRID_HPP
 
-#include <algorithm>
+#include <cassert>
 #include <cstdint>
+#include <memory>
 #include <new>
-#include <stdexcept>
-#include <utility>
 
 struct Grid {
     const std::size_t rows = 9;
     const std::size_t cols = 9;
     const std::size_t size = rows * cols;
-    std::uint8_t* data = nullptr;
+    std::unique_ptr<std::uint8_t[]> data;
 
-    Grid() {
-        data = new std::uint8_t[size]();
-    }
+    Grid() : data(new std::uint8_t[size]()) {}
 
-    // copy constructor
-    Grid(const Grid& other) {
-        if (other.data) {
-            data = new std::uint8_t[size]();
-            std::copy(other.data, other.data + other.size, data);
-        }
-    }
-
-    // move constructor
-    Grid(Grid&& other) {
-        std::swap(data, other.data);
-    }
-
-    ~Grid() {
-        delete[] data;
-    }
-
-    std::uint8_t& operator[](int index) {
-        if (!data || index < 0 || index >= size) {
-            throw std::out_of_range("Grid[] : index(" + std::to_string(index) + ") is out of range");
-        }
-
+    // subscript operator
+    std::uint8_t& operator[](std::size_t index) {
+        assert(data && index < size);
         return data[index];
     }
 
-    std::uint8_t operator[](int index) const {
-        if (!data || index < 0 || index >= size) {
-            throw std::out_of_range("const Grid[] : index(" + std::to_string(index) + ") is out of range");
-        }
-
+    // const subscript operator
+    std::uint8_t operator[](std::size_t index) const {
+        assert(data && index < size);
         return data[index];
     }
 
-    // copy assignment operator
-    Grid& operator=(const Grid& other) {
-        if (&other != this) {
-            Grid temp(other);  // makes copy
-            std::swap(data, temp.data);
-        }
-        return *this;
-    }
-
-    // move assignment operator
-    Grid& operator=(Grid&& other) {
-        Grid temp(std::move(other));  // moves object
-        std::swap(data, temp.data);
-        return *this;
-    }
-
-    // removes ownership from this object
+    // removes ownership of data
     std::uint8_t* get_ownership() {
-        return std::exchange(data, nullptr);
+        return data.release();
     }
 };
 
