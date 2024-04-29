@@ -61,16 +61,14 @@ struct Grid {
 
     // move assignment operator
     Grid& operator=(Grid&& other) {
-        Grid temp(std::move(other));  // moves the array
+        Grid temp(std::move(other));  // moves object
         std::swap(data, temp.data);
         return *this;
     }
 
-    // removes ownership of data for this object
+    // removes ownership from this object
     std::uint8_t* get_ownership() {
-        auto pointer = data;
-        data = nullptr;
-        return pointer;
+        return std::exchange(data, nullptr);
     }
 };
 

@@ -92,8 +92,8 @@ int main() {
         bb->bottom_right.x * image.size().width,
         bb->bottom_right.y * image.size().height);
 
-    auto grid_ptr = grid.get_ownership();
-    std::vector<std::uint8_t> grid_vec(grid_ptr, grid_ptr + grid.size);
+    // makes copy
+    std::vector<std::uint8_t> grid_vec(grid.data, grid.data + grid.size);
     print_sudoku_grid(grid_vec);
 
     cv::waitKey(0);
