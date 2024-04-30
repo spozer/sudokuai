@@ -2,7 +2,7 @@
 
 #include <cassert>
 #include <cstdint>
-#include <cstdlib>
+#include <new>
 #include <opencv2/imgcodecs.hpp>
 #include <opencv2/imgproc.hpp>
 #include <vector>
@@ -14,7 +14,7 @@
 #include "extraction/structs/grid.hpp"
 
 BoundingBox *detect_grid(const char *path) {
-    BoundingBox *bb_ptr = static_cast<BoundingBox *>(std::malloc(sizeof(BoundingBox)));
+    BoundingBox *bb_ptr = new BoundingBox();
     cv::Mat mat = cv::imread(path);
     int width = mat.size().width;
     int height = mat.size().height;
@@ -64,7 +64,6 @@ std::uint8_t *extract_grid(const char *path, const BoundingBox *bounding_box) {
         bounding_box->bottom_left.y * mat.size().height,
         bounding_box->bottom_right.x * mat.size().width,
         bounding_box->bottom_right.y * mat.size().height);
-    mat.release();
 
     return grid.get_ownership();
 }
@@ -103,7 +102,6 @@ std::uint8_t *extract_grid_from_roi(
         points[2].y,
         points[3].x,
         points[3].y);
-    image_copy.release();
 
     return grid.get_ownership();
 }

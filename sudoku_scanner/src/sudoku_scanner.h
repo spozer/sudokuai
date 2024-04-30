@@ -12,8 +12,8 @@ using std::uint8_t;
 #endif
 
 struct Offset {
-    double x;
-    double y;
+    double x = 0.0;
+    double y = 0.0;
 };
 
 struct BoundingBox {

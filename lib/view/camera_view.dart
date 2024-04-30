@@ -42,6 +42,9 @@ class CameraViewState extends State<CameraView> with WidgetsBindingObserver {
   bool _isCameraInitialized = false;
   bool _isCameraAccessGranted = false;
   bool _isCameraDisabled = false;
+  bool _showFocusCircle = false;
+  double _focusX = 0;
+  double _focusY = 0;
 
   @override
   void initState() {
@@ -264,12 +267,17 @@ class CameraViewState extends State<CameraView> with WidgetsBindingObserver {
           // Whether we have to fit the camera preview to its height
           // or its width.
           bool fitHeight = (widgetAspectRatio > cameraAspectRatio);
+          double actualWidth = fitHeight ? height / cameraAspectRatio : width;
+          double actualHeight = fitHeight ? height : width * cameraAspectRatio;
 
           // Save cropped size of preview, which is displayed in this widget.
+          // Camera pixels != Widget pixels
           _previewWidth =
               fitHeight ? cameraHeight / widgetAspectRatio : cameraWidth;
           _previewHeight =
               fitHeight ? cameraHeight : cameraWidth * widgetAspectRatio;
+
+          double focusCircleSize = width / 10;
 
           return SizedBox(
             width: width,
@@ -280,9 +288,27 @@ class CameraViewState extends State<CameraView> with WidgetsBindingObserver {
                 child: FittedBox(
                   fit: fitHeight ? BoxFit.fitHeight : BoxFit.fitWidth,
                   child: SizedBox(
-                    width: fitHeight ? height / cameraAspectRatio : width,
-                    height: fitHeight ? height : width * cameraAspectRatio,
-                    child: CameraPreview(_controller!),
+                    width: actualWidth,
+                    height: actualHeight,
+                    child: GestureDetector(
+                      onTapUp: (details) =>
+                          _onTapFocus(details, actualWidth, actualHeight),
+                      child: Stack(children: [
+                        CameraPreview(_controller!),
+                        if (_showFocusCircle)
+                          Positioned(
+                              top: _focusY - focusCircleSize / 2,
+                              left: _focusX - focusCircleSize / 2,
+                              child: Container(
+                                height: focusCircleSize,
+                                width: focusCircleSize,
+                                decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    border: Border.all(
+                                        color: Colors.white, width: 1)),
+                              ))
+                      ]),
+                    ),
                   ),
                 ),
               ),
@@ -294,6 +320,44 @@ class CameraViewState extends State<CameraView> with WidgetsBindingObserver {
         }
       },
     );
+  }
+
+  /// Callback function to set focus on tap
+  Future<void> _onTapFocus(
+      TapUpDetails details, double width, double height) async {
+    if (!_isCameraInitialized || _isTakingPicture) return;
+
+    double x = details.localPosition.dx;
+    double y = details.localPosition.dy;
+    double xp = x / width;
+    double yp = y / height;
+
+    Offset point = Offset(xp, yp);
+    debugPrint("tap focus point: $point");
+
+    try {
+      // Manually focus
+      await _controller!.setFocusPoint(point);
+      // Manually set light exposure
+      await _controller!.setExposurePoint(point);
+    } on CameraException catch (e) {
+      // Ignore error, just do nothing.
+      debugPrint(
+          'Error in _onToggleFlashButtonPressed: $e.code\nError Message: $e.message');
+    }
+
+    if (mounted) {
+      setState(() {
+        _focusX = x;
+        _focusY = y;
+        _showFocusCircle = true;
+        Future.delayed(const Duration(milliseconds: 500)).whenComplete(() {
+          setState(() {
+            _showFocusCircle = false;
+          });
+        });
+      });
+    }
   }
 
   /// A widget indicating the ROI as an overlay.

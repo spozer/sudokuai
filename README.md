@@ -31,7 +31,7 @@ Then update the main app and run the build command:
 flutter pub get
 flutter run
 ```
-You can run `flutter build apk` to just build the apk without running it.
+You can run `flutter build apk --split-per-abi ` to build an apk for each platform instead of one big one.
 
 > \[!NOTE]\
 > Read [here](sudoku_scanner/) for more information on how to debug and test the sudoku_scanner plugin!
