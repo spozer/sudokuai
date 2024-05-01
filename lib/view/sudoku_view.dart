@@ -1,5 +1,5 @@
 import 'dart:typed_data';
-
+import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:tuple/tuple.dart';
@@ -116,7 +116,7 @@ class _SudokuViewState extends State<SudokuView> {
               Selector<SudokuGrid, BoardStatus>(
                   selector: (_, sudokuGrid) => sudokuGrid.getBoardStatus(),
                   builder: (_, boardStatus, __) {
-                    debugPrint("rebuild Solved info text");
+                    if (kDebugMode) debugPrint("rebuild Solved info text");
                     Color? color;
                     IconData icon;
                     String text;
@@ -257,7 +257,7 @@ class _SudokuViewState extends State<SudokuView> {
               child: Selector<SudokuGrid, bool>(
                 selector: (_, sudokuGrid) => sudokuGrid.hasUndoHistory(),
                 builder: (_, hasUndoHistory, __) {
-                  debugPrint("rebuild of undo button color");
+                  if (kDebugMode) debugPrint("rebuild of undo button color");
                   return Icon(
                     Icons.undo,
                     size: 45.0,
@@ -290,7 +290,7 @@ class SudokuGridWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    debugPrint("rebuild whole sudoku grid");
+    if (kDebugMode) debugPrint("rebuild whole sudoku grid");
     return FittedBox(
       fit: BoxFit.contain,
       child: Table(
@@ -352,7 +352,7 @@ class SudokuCellWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     final sudokuGrid = context.read<SudokuGrid>();
     const fontSize = 23.0;
-    debugPrint("whole rebuild of ($row, $col)");
+    if (kDebugMode) debugPrint("whole rebuild of ($row, $col)");
     return InkResponse(
       onTap: () => sudokuGrid.select(row, col),
       highlightColor: Colors.transparent,
@@ -363,7 +363,7 @@ class SudokuCellWidget extends StatelessWidget {
           sudokuGrid.getCellStatus(row, col),
         ),
         builder: (_, data, child) {
-          debugPrint('container rebuild of ($row, $col)');
+          if (kDebugMode) debugPrint("container rebuild of ($row, $col)");
           return Container(
             color: _getColor(data.item2),
             child: child ??

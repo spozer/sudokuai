@@ -1,6 +1,7 @@
 import 'dart:collection';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:tuple/tuple.dart';
 
 enum BoardStatus {
@@ -309,7 +310,7 @@ class SudokuGrid extends ChangeNotifier {
       final digits = <int>{};
       // Check row unit.
       if (!_cellList![index].every((cell) => digits.add(cell.value))) {
-        debugPrint("Duplicate in row: $index");
+        if (kDebugMode) debugPrint("Duplicate in row: $index");
         _status = BoardStatus.hasErrors;
         return false;
       }
@@ -318,7 +319,7 @@ class SudokuGrid extends ChangeNotifier {
       // Check column unit.
       for (int cRow = 0; cRow < 9; ++cRow) {
         if (!digits.add(_cellList![cRow][index].value)) {
-          debugPrint("Duplicate in column: $index");
+          if (kDebugMode) debugPrint("Duplicate in column: $index");
           _status = BoardStatus.hasErrors;
           return false;
         }
@@ -329,7 +330,7 @@ class SudokuGrid extends ChangeNotifier {
       for (final bRow in _blockList[index].rows) {
         for (final bCol in _blockList[index].cols) {
           if (!digits.add(_cellList![bRow][bCol].value)) {
-            debugPrint("Duplicate in block: $index");
+            if (kDebugMode) debugPrint("Duplicate in block: $index");
             _status = BoardStatus.hasErrors;
             return false;
           }

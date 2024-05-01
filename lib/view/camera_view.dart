@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'dart:ui';
 import 'dart:async';
+import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
 import 'package:flutter/services.dart';
@@ -67,7 +68,7 @@ class CameraViewState extends State<CameraView> with WidgetsBindingObserver {
 
   @override
   void dispose() {
-    debugPrint("Dispose CameraView");
+    if (kDebugMode) debugPrint("Dispose CameraView");
     WidgetsBinding.instance.removeObserver(this);
     // Dispose of the controller when the widget is disposed.
     _controller?.dispose();
@@ -84,12 +85,12 @@ class CameraViewState extends State<CameraView> with WidgetsBindingObserver {
     // is not valid anymore. Therefore the camera needs to
     // be reinitialized on resume.
     if (state == AppLifecycleState.resumed) {
-      debugPrint("CameraView state changed to resumed");
+      if (kDebugMode) debugPrint("CameraView state changed to resumed");
       // Resume with last state of camera flash.
       if (!_isCameraDisabled) _initCamera(flashOn: _wasFlashOn);
     } else if (state == AppLifecycleState.paused) {
       // Make sure the current [CameraController] gets disposed of cleanly.
-      debugPrint("CameraView state changed to paused");
+      if (kDebugMode) debugPrint("CameraView state changed to paused");
       // Save current state of camera flash.
       _wasFlashOn = _isFlashOn;
       _closeCamera();
@@ -219,7 +220,7 @@ class CameraViewState extends State<CameraView> with WidgetsBindingObserver {
       _isFlashOn = flashOn;
     } on CameraException catch (e) {
       // Ignore error, just move on.
-      debugPrint('Error in _initCamera: $e.code\nError Message: $e.message');
+      debugPrint("Error in _initCamera: $e.code\nError Message: $e.message");
     }
 
     // Refresh page if mounted.
@@ -277,7 +278,7 @@ class CameraViewState extends State<CameraView> with WidgetsBindingObserver {
           _previewHeight =
               fitHeight ? cameraHeight : cameraWidth * widgetAspectRatio;
 
-          double focusCircleSize = width / 10;
+          double focusCircleSize = width / 6;
 
           return SizedBox(
             width: width,
@@ -296,17 +297,27 @@ class CameraViewState extends State<CameraView> with WidgetsBindingObserver {
                       child: Stack(children: [
                         CameraPreview(_controller!),
                         if (_showFocusCircle)
-                          Positioned(
-                              top: _focusY - focusCircleSize / 2,
-                              left: _focusX - focusCircleSize / 2,
-                              child: Container(
-                                height: focusCircleSize,
-                                width: focusCircleSize,
-                                decoration: BoxDecoration(
-                                    shape: BoxShape.circle,
-                                    border: Border.all(
-                                        color: Colors.white, width: 1)),
-                              ))
+                          TweenAnimationBuilder(
+                            tween: Tween(begin: 1.0, end: 0.8),
+                            duration: const Duration(milliseconds: 300),
+                            builder: (context, value, child) {
+                              double scaledSize = value * focusCircleSize;
+                              return Positioned(
+                                top: _focusY - scaledSize / 2,
+                                left: _focusX - scaledSize / 2,
+                                child: Container(
+                                  height: scaledSize,
+                                  width: scaledSize,
+                                  decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      border: Border.all(
+                                        color: Colors.white,
+                                        width: 1.5,
+                                      )),
+                                ),
+                              );
+                            },
+                          )
                       ]),
                     ),
                   ),
@@ -333,7 +344,7 @@ class CameraViewState extends State<CameraView> with WidgetsBindingObserver {
     double yp = y / height;
 
     Offset point = Offset(xp, yp);
-    debugPrint("tap focus point: $point");
+    if (kDebugMode) debugPrint("tap focus point: $point");
 
     try {
       // Manually focus
@@ -343,7 +354,7 @@ class CameraViewState extends State<CameraView> with WidgetsBindingObserver {
     } on CameraException catch (e) {
       // Ignore error, just do nothing.
       debugPrint(
-          'Error in _onToggleFlashButtonPressed: $e.code\nError Message: $e.message');
+          "Error in _onToggleFlashButtonPressed: $e.code\nError Message: $e.message");
     }
 
     if (mounted) {
@@ -351,7 +362,7 @@ class CameraViewState extends State<CameraView> with WidgetsBindingObserver {
         _focusX = x;
         _focusY = y;
         _showFocusCircle = true;
-        Future.delayed(const Duration(milliseconds: 500)).whenComplete(() {
+        Future.delayed(const Duration(milliseconds: 700)).whenComplete(() {
           setState(() {
             _showFocusCircle = false;
           });
@@ -536,7 +547,7 @@ class CameraViewState extends State<CameraView> with WidgetsBindingObserver {
     } on CameraException catch (e) {
       // Ignore error, just do nothing.
       debugPrint(
-          'Error in _onToggleFlashButtonPressed: $e.code\nError Message: $e.message');
+          "Error in _onToggleFlashButtonPressed: $e.code\nError Message: $e.message");
     }
 
     if (mounted) setState(() {});
@@ -573,7 +584,7 @@ class CameraViewState extends State<CameraView> with WidgetsBindingObserver {
     } on CameraException catch (e) {
       // TODO: error handling when taking picture fails
       debugPrint(
-          'Error in _onTakePictureButtonPressed: $e.code\nError Message: $e.message');
+          "Error in _onTakePictureButtonPressed: $e.code\nError Message: $e.message");
       rethrow;
     }
   }
@@ -601,7 +612,7 @@ class CameraViewState extends State<CameraView> with WidgetsBindingObserver {
     } on PlatformException catch (e) {
       // TODO: error handling when picking image fails
       debugPrint(
-          'Error in _onGalleryButtonPressed: $e.code\nError Message: $e.message');
+          "Error in _onGalleryButtonPressed: $e.code\nError Message: $e.message");
       rethrow;
     }
   }
