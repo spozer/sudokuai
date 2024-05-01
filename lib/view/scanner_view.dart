@@ -23,27 +23,29 @@ class ScannerView extends StatefulWidget {
 }
 
 class _ScannerViewState extends State<ScannerView> {
-  late Future<ui.Image> imageFuture;
-  late Future<void> firstBuildFuture;
+  late Future<ui.Image> _imageFuture;
+  late Future<void> _firstBuildFuture;
 
-  List<Offset> points = [];
-  Size? maxPreviewSize;
-  Offset minPreviewOffset = const Offset(0, 0);
-  Size? previewSize;
-  Offset previewOffset = const Offset(0, 0);
-  bool gotBoundingBox = false;
+  List<Offset> _points = [];
+  Size? _maxPreviewSize;
+  Offset _minPreviewOffset = const Offset(0, 0);
+  Size? _previewSize;
+  Offset _previewOffset = const Offset(0, 0);
+  bool _gotBoundingBox = false;
+  bool _showMagnifier = false;
+  int? _touchBubbleId;
 
   @override
   void initState() {
     final firstBuildCompleter = Completer();
-    firstBuildFuture = firstBuildCompleter.future;
+    _firstBuildFuture = firstBuildCompleter.future;
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       // Indicate that first build was completed.
       firstBuildCompleter.complete();
     });
 
-    imageFuture = _getUiImage(widget.imagePath);
+    _imageFuture = _getUiImage(widget.imagePath);
 
     SudokuScanner.detectGrid(widget.imagePath).then(_onScanComplete);
 
@@ -56,23 +58,29 @@ class _ScannerViewState extends State<ScannerView> {
     final screenHeight = MediaQuery.of(context).size.height;
 
     // Padding for preview.
-    const previewLeft = 0.0;
-    final previewTop = MediaQuery.of(context).viewPadding.top;
+    final previewLeft = 0.07 * screenWidth;
+    final previewTop =
+        MediaQuery.of(context).viewPadding.top + 0.02 * screenHeight;
 
-    minPreviewOffset = Offset(previewLeft, previewTop);
-    maxPreviewSize = Size(screenWidth - 2 * previewLeft, screenHeight * 0.85);
+    _minPreviewOffset = Offset(previewLeft, previewTop);
+    _maxPreviewSize = Size(screenWidth - 2 * previewLeft, screenHeight * 0.83);
 
-    final buttonBarSize = (screenHeight - maxPreviewSize!.height - previewTop);
-    final buttonBarOffset = buttonBarSize / 2;
     final touchBubbleSize = screenHeight * 0.04;
+    final magnifierWidth = screenWidth * 0.2;
+    final magnifierHeight = magnifierWidth / 1.25;
+    final magnifierYOffset = -magnifierHeight / 2 - touchBubbleSize;
+    final buttonBarSize = screenHeight - _maxPreviewSize!.height - previewTop;
+    final buttonBarOffset = buttonBarSize / 2;
 
     return PopScope(
       canPop: false,
       child: Scaffold(
         body: Stack(
           children: <Widget>[
-            _getPreview(maxPreviewSize!, minPreviewOffset),
+            _getPreview(_maxPreviewSize!, _minPreviewOffset),
             _getBoundingBox(touchBubbleSize),
+            if (_showMagnifier)
+              _getMagnifier(magnifierWidth, magnifierHeight, magnifierYOffset),
             _getButtonBar(buttonBarSize, buttonBarOffset),
           ],
         ),
@@ -86,12 +94,11 @@ class _ScannerViewState extends State<ScannerView> {
           EdgeInsets.only(top: offset.dy, left: offset.dx, right: offset.dx),
       child: Align(
         alignment: Alignment.topCenter,
-        child: Container(
+        child: SizedBox(
           width: size.width,
           height: size.height,
-          color: Colors.black,
           child: FutureBuilder(
-            future: imageFuture,
+            future: _imageFuture,
             builder: (_, snapshot) {
               if (snapshot.connectionState == ConnectionState.done) {
                 return RawImage(
@@ -109,7 +116,7 @@ class _ScannerViewState extends State<ScannerView> {
   }
 
   Widget _getBoundingBox(double touchBubbleSize) {
-    return (gotBoundingBox)
+    return (_gotBoundingBox)
         ? SizedBox(
             width: double.infinity,
             height: double.infinity,
@@ -121,7 +128,7 @@ class _ScannerViewState extends State<ScannerView> {
                 _getTouchBubble(3, touchBubbleSize),
                 CustomPaint(
                   painter: EdgePainter(
-                    points: points,
+                    points: _points,
                     color: const Color.fromARGB(255, 43, 188, 255),
                   ),
                 ),
@@ -131,12 +138,35 @@ class _ScannerViewState extends State<ScannerView> {
         : const SizedBox();
   }
 
+  Widget _getMagnifier(double width, double height, double yOffset) {
+    final topEdge = _points[_touchBubbleId!].dy - height / 2;
+
+    if (topEdge + yOffset <= 0) {
+      yOffset = -yOffset;
+    }
+    return Positioned(
+      left: _points[_touchBubbleId!].dx - width / 2,
+      top: topEdge + yOffset,
+      child: RawMagnifier(
+        focalPointOffset: Offset(0, -yOffset),
+        decoration: const MagnifierDecoration(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.all(Radius.circular(10)),
+            side: BorderSide(color: Colors.white, width: 1.25),
+          ),
+        ),
+        size: Size(width, height),
+        magnificationScale: 1.5,
+      ),
+    );
+  }
+
   Widget _getTouchBubble(int id, double size) {
-    assert(id < points.length);
+    assert(id < _points.length);
 
     return Positioned(
-      top: points[id].dy - (size / 2),
-      left: points[id].dx - (size / 2),
+      top: _points[id].dy - (size / 2),
+      left: _points[id].dx - (size / 2),
       child: TouchBubble(
         id: id,
         size: size,
@@ -175,15 +205,15 @@ class _ScannerViewState extends State<ScannerView> {
             ),
             ElevatedButton(
               onPressed: () async {
-                if (points.isEmpty || previewSize == null) return;
+                if (_points.isEmpty || _previewSize == null) return;
 
                 final relativePoints = List.generate(
-                  points.length,
-                  (index) => points[index] - previewOffset,
+                  _points.length,
+                  (index) => _points[index] - _previewOffset,
                 );
 
                 final boundingBox =
-                    BoundingBox.fromPoints(relativePoints, previewSize!);
+                    BoundingBox.fromPoints(relativePoints, _previewSize!);
                 final valueList =
                     SudokuScanner.extractGrid(widget.imagePath, boundingBox)
                         .then((valueList) {
@@ -196,13 +226,13 @@ class _ScannerViewState extends State<ScannerView> {
               },
               style: ElevatedButton.styleFrom(
                 fixedSize: buttonSize,
-                backgroundColor: (gotBoundingBox)
+                backgroundColor: (_gotBoundingBox)
                     ? const Color.fromARGB(255, 102, 102, 102)
                     : Colors.grey[800],
-                elevation: (gotBoundingBox) ? 5 : 0,
+                elevation: (_gotBoundingBox) ? 5 : 0,
                 shadowColor: Colors.black,
               ),
-              child: (gotBoundingBox)
+              child: (_gotBoundingBox)
                   ? const Icon(
                       Icons.check,
                       color: Colors.white,
@@ -218,57 +248,60 @@ class _ScannerViewState extends State<ScannerView> {
   }
 
   void _onScanComplete(BoundingBox boundingBox) async {
-    final image = await imageFuture;
+    final image = await _imageFuture;
     final imageSize = Size(image.width.toDouble(), image.height.toDouble());
 
-    await firstBuildFuture;
-    double previewAspectRatio = maxPreviewSize!.height / maxPreviewSize!.width;
+    await _firstBuildFuture;
+    double previewAspectRatio =
+        _maxPreviewSize!.height / _maxPreviewSize!.width;
     double imageAspectRatio = imageSize.height / imageSize.width;
     bool fitHeight = (imageAspectRatio > previewAspectRatio);
 
     final previewWidth = fitHeight
-        ? maxPreviewSize!.height / imageAspectRatio
-        : maxPreviewSize!.width;
+        ? _maxPreviewSize!.height / imageAspectRatio
+        : _maxPreviewSize!.width;
     final previewHeight = fitHeight
-        ? maxPreviewSize!.height
-        : maxPreviewSize!.width * imageAspectRatio;
+        ? _maxPreviewSize!.height
+        : _maxPreviewSize!.width * imageAspectRatio;
 
-    previewSize = Size(previewWidth, previewHeight);
+    _previewSize = Size(previewWidth, previewHeight);
 
     // Adjust for image location.
-    previewOffset = Offset(
-      minPreviewOffset.dx + (maxPreviewSize!.width - previewWidth) / 2,
-      minPreviewOffset.dy + (maxPreviewSize!.height - previewHeight) / 2,
+    _previewOffset = Offset(
+      _minPreviewOffset.dx + (_maxPreviewSize!.width - previewWidth) / 2,
+      _minPreviewOffset.dy + (_maxPreviewSize!.height - previewHeight) / 2,
     );
 
-    final relativePoints = boundingBox.toPoints(previewSize!);
+    final relativePoints = boundingBox.toPoints(_previewSize!);
 
     // Absolut locations.
-    points = List.generate(
+    _points = List.generate(
       relativePoints.length,
-      (index) => relativePoints[index] + previewOffset,
+      (index) => relativePoints[index] + _previewOffset,
     );
 
     if (mounted) {
       setState(() {
-        gotBoundingBox = true;
+        _gotBoundingBox = true;
       });
     }
   }
 
   Offset _clampPosition(Offset position) {
-    if (previewSize == null) return position;
+    if (_previewSize == null) return position;
     double clampX = position.dx
-        .clamp(previewOffset.dx, previewSize!.width + previewOffset.dx);
+        .clamp(_previewOffset.dx, _previewSize!.width + _previewOffset.dx);
     double clampY = position.dy
-        .clamp(previewOffset.dy, previewSize!.height + previewOffset.dy);
+        .clamp(_previewOffset.dy, _previewSize!.height + _previewOffset.dy);
     return Offset(clampX, clampY);
   }
 
   void _onDraggingStarted(int id, Offset newPosition) {
     if (mounted) {
       setState(() {
-        points[id] = _clampPosition(newPosition);
+        _points[id] = _clampPosition(newPosition);
+        _showMagnifier = true;
+        _touchBubbleId = id;
       });
     }
   }
@@ -276,13 +309,17 @@ class _ScannerViewState extends State<ScannerView> {
   void _onDrag(int id, Offset newPosition) {
     if (mounted) {
       setState(() {
-        points[id] = _clampPosition(newPosition);
+        _points[id] = _clampPosition(newPosition);
       });
     }
   }
 
   void _onDraggingStopped() {
-    if (mounted) setState(() {});
+    if (mounted) {
+      setState(() {
+        _showMagnifier = false;
+      });
+    }
   }
 
   Future<ui.Image> _getUiImage(String imagePath) {

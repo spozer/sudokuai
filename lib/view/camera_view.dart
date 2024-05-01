@@ -336,7 +336,7 @@ class CameraViewState extends State<CameraView> with WidgetsBindingObserver {
   /// Callback function to set focus on tap
   Future<void> _onTapFocus(
       TapUpDetails details, double width, double height) async {
-    if (!_isCameraInitialized || _isTakingPicture) return;
+    if (_showFocusCircle || !_isCameraInitialized || _isTakingPicture) return;
 
     double x = details.localPosition.dx;
     double y = details.localPosition.dy;
