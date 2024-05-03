@@ -58,16 +58,16 @@ class _ScannerViewState extends State<ScannerView> {
     final screenHeight = MediaQuery.of(context).size.height;
 
     // Padding for preview.
+    final topPadding = MediaQuery.of(context).viewPadding.top;
     final previewLeft = 0.07 * screenWidth;
-    final previewTop =
-        MediaQuery.of(context).viewPadding.top + 0.02 * screenHeight;
+    final previewTop = topPadding + 0.02 * screenHeight;
 
     _minPreviewOffset = Offset(previewLeft, previewTop);
     _maxPreviewSize = Size(screenWidth - 2 * previewLeft, screenHeight * 0.83);
 
     final touchBubbleSize = screenHeight * 0.04;
-    final magnifierWidth = screenWidth * 0.2;
-    final magnifierHeight = magnifierWidth / 1.25;
+    final magnifierWidth = screenWidth * 0.19;
+    final magnifierHeight = magnifierWidth / 1.2;
     final magnifierYOffset = -magnifierHeight / 2 - touchBubbleSize;
     final buttonBarSize = screenHeight - _maxPreviewSize!.height - previewTop;
     final buttonBarOffset = buttonBarSize / 2;
@@ -78,9 +78,10 @@ class _ScannerViewState extends State<ScannerView> {
         body: Stack(
           children: <Widget>[
             _getPreview(_maxPreviewSize!, _minPreviewOffset),
-            _getBoundingBox(touchBubbleSize),
+            if (_gotBoundingBox) _getBoundingBox(touchBubbleSize),
             if (_showMagnifier)
-              _getMagnifier(magnifierWidth, magnifierHeight, magnifierYOffset),
+              _getMagnifier(magnifierWidth, magnifierHeight, magnifierYOffset,
+                  topPadding),
             _getButtonBar(buttonBarSize, buttonBarOffset),
           ],
         ),
@@ -116,49 +117,95 @@ class _ScannerViewState extends State<ScannerView> {
   }
 
   Widget _getBoundingBox(double touchBubbleSize) {
-    return (_gotBoundingBox)
-        ? SizedBox(
-            width: double.infinity,
-            height: double.infinity,
-            child: Stack(
-              children: <Widget>[
-                _getTouchBubble(0, touchBubbleSize),
-                _getTouchBubble(1, touchBubbleSize),
-                _getTouchBubble(2, touchBubbleSize),
-                _getTouchBubble(3, touchBubbleSize),
-                CustomPaint(
-                  painter: EdgePainter(
-                    points: _points,
-                    color: const Color.fromARGB(255, 43, 188, 255),
-                  ),
-                ),
-              ],
+    return SizedBox(
+      width: double.infinity,
+      height: double.infinity,
+      child: Stack(
+        children: <Widget>[
+          _getTouchBubble(0, touchBubbleSize),
+          _getTouchBubble(1, touchBubbleSize),
+          _getTouchBubble(2, touchBubbleSize),
+          _getTouchBubble(3, touchBubbleSize),
+          CustomPaint(
+            painter: EdgePainter(
+              points: _points,
+              color: const Color.fromARGB(255, 43, 188, 255),
             ),
-          )
-        : const SizedBox();
-  }
-
-  Widget _getMagnifier(double width, double height, double yOffset) {
-    final topEdge = _points[_touchBubbleId!].dy - height / 2;
-
-    if (topEdge + yOffset <= 0) {
-      yOffset = -yOffset;
-    }
-    return Positioned(
-      left: _points[_touchBubbleId!].dx - width / 2,
-      top: topEdge + yOffset,
-      child: RawMagnifier(
-        focalPointOffset: Offset(0, -yOffset),
-        decoration: const MagnifierDecoration(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.all(Radius.circular(10)),
-            side: BorderSide(color: Colors.white, width: 1.25),
           ),
-        ),
-        size: Size(width, height),
-        magnificationScale: 1.5,
+        ],
       ),
     );
+  }
+
+  Widget _getMagnifier(
+      double width, double height, double yOffset, double topPadding) {
+    final topEdge = _points[_touchBubbleId!].dy - height / 2;
+
+    if (topEdge + yOffset <= topPadding) {
+      yOffset = -yOffset;
+    }
+
+    double scale = 1.5;
+
+    double transX =
+        _points[_touchBubbleId!].dx - _previewOffset.dx - width / 2 / scale;
+    double transY =
+        _points[_touchBubbleId!].dy - _previewOffset.dy - height / 2 / scale;
+
+    final Matrix4 cropMatrix = Matrix4.identity()
+      ..scale(scale, scale)
+      ..translate(-transX, -transY);
+
+    return Positioned(
+        left: _points[_touchBubbleId!].dx - width / 2,
+        top: topEdge + yOffset,
+        child: Stack(children: [
+          Container(
+            width: width,
+            height: height,
+            decoration: BoxDecoration(
+              color: Colors.black,
+              border: Border.all(color: Colors.white, width: 1.25),
+              borderRadius: BorderRadius.circular(width / 10),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.25),
+                  blurRadius: 10.0,
+                  offset: const Offset(0, 3.0),
+                )
+              ],
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(width / 10 - 1.25),
+              child: FittedBox(
+                alignment: Alignment.topLeft,
+                fit: BoxFit.none,
+                child: ImageFiltered(
+                  imageFilter: ui.ImageFilter.matrix(cropMatrix.storage),
+                  child: FutureBuilder(
+                    future: _imageFuture,
+                    builder: (_, snapshot) {
+                      if (snapshot.connectionState == ConnectionState.done) {
+                        return RawImage(
+                          image: snapshot.data as ui.Image,
+                          fit: BoxFit.contain,
+                          height: _previewSize!.height,
+                          width: _previewSize!.width,
+                        );
+                      } else {
+                        return const SizedBox();
+                      }
+                    },
+                  ),
+                ),
+              ),
+            ),
+          ),
+          CustomPaint(
+            size: Size(width, height),
+            painter: const CrosshairPainter(),
+          )
+        ]));
   }
 
   Widget _getTouchBubble(int id, double size) {
@@ -324,6 +371,40 @@ class _ScannerViewState extends State<ScannerView> {
 
   Future<ui.Image> _getUiImage(String imagePath) {
     return File(imagePath).readAsBytes().then(decodeImageFromList);
+  }
+}
+
+class CrosshairPainter extends CustomPainter {
+  const CrosshairPainter({
+    this.color = Colors.white,
+    this.strokeWidth = 5,
+  });
+
+  final double strokeWidth;
+  final Color color;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    Paint crossPaint = Paint()
+      ..strokeWidth = strokeWidth / 2
+      ..color = color
+      ..blendMode = BlendMode.difference;
+
+    double crossSize = size.longestSide * 0.15;
+
+    canvas.drawLine(size.center(Offset(-crossSize, 0)),
+        size.center(Offset(crossSize, 0)), crossPaint);
+
+    canvas.drawLine(size.center(Offset(0, -crossSize)),
+        size.center(Offset(0, crossSize)), crossPaint);
+
+    canvas.drawPoints(
+        ui.PointMode.points, [size.center(const Offset(0, 0))], crossPaint);
+  }
+
+  @override
+  bool shouldRepaint(CustomPainter oldDelegate) {
+    return true;
   }
 }
 
