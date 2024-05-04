@@ -377,7 +377,7 @@ class _ScannerViewState extends State<ScannerView> {
 class CrosshairPainter extends CustomPainter {
   const CrosshairPainter({
     this.color = Colors.white,
-    this.strokeWidth = 5,
+    this.strokeWidth = 2,
   });
 
   final double strokeWidth;
@@ -386,20 +386,22 @@ class CrosshairPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     Paint crossPaint = Paint()
-      ..strokeWidth = strokeWidth / 2
+      ..strokeWidth = strokeWidth
       ..color = color
+      ..style = PaintingStyle.stroke
       ..blendMode = BlendMode.difference;
 
+    Offset center = Offset(size.width, size.height) / 2;
     double crossSize = size.longestSide * 0.15;
 
-    canvas.drawLine(size.center(Offset(-crossSize, 0)),
-        size.center(Offset(crossSize, 0)), crossPaint);
+    Path crosshair = Path();
 
-    canvas.drawLine(size.center(Offset(0, -crossSize)),
-        size.center(Offset(0, crossSize)), crossPaint);
+    crosshair.moveTo(center.dx - crossSize, center.dy);
+    crosshair.lineTo(center.dx + crossSize, center.dy);
+    crosshair.moveTo(center.dx, center.dy - crossSize);
+    crosshair.lineTo(center.dx, center.dy + crossSize);
 
-    canvas.drawPoints(
-        ui.PointMode.points, [size.center(const Offset(0, 0))], crossPaint);
+    canvas.drawPath(crosshair, crossPaint);
   }
 
   @override
