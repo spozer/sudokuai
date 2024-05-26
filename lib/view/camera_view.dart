@@ -1,6 +1,6 @@
 import 'dart:io';
-import 'dart:ui';
 import 'dart:async';
+import 'dart:ui';
 import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
@@ -24,25 +24,18 @@ class CameraViewState extends State<CameraView> with WidgetsBindingObserver {
   Future<void>? _initializeControllerFuture;
 
   late Future<CameraDescription> camera;
-  // Offset percentage from center to top.
-  late double _roiOffset;
-  // Percentage, based off of overlay size.
-  late double _roiSize;
-  // The actual preview size of the camera widget.
-  late double _previewHeight;
-  late double _previewWidth;
+  // Percentage, based off of camera preview size.
+  final double _roiSize = 0.7;
 
   // Various states.
   bool _isTakingPicture = false;
   bool _isFlashOn = false;
-  bool _wasFlashOn = false;
   // Keep in mind that _controller.value.isInitialized is not changed on
   // dispose of camera controller. So only use this to check if camera
   // was initialized at least once in the past. Use the following
   // parameter to check the actual state.
   bool _isCameraInitialized = false;
   bool _isCameraAccessGranted = false;
-  bool _isCameraDisabled = false;
   bool _showFocusCircle = false;
   double _focusX = 0;
   double _focusY = 0;
@@ -87,12 +80,10 @@ class CameraViewState extends State<CameraView> with WidgetsBindingObserver {
     if (state == AppLifecycleState.resumed) {
       if (kDebugMode) debugPrint("CameraView state changed to resumed");
       // Resume with last state of camera flash.
-      if (!_isCameraDisabled) _initCamera(flashOn: _wasFlashOn);
+      _initCamera();
     } else if (state == AppLifecycleState.paused) {
-      // Make sure the current [CameraController] gets disposed of cleanly.
       if (kDebugMode) debugPrint("CameraView state changed to paused");
-      // Save current state of camera flash.
-      _wasFlashOn = _isFlashOn;
+      // Make sure the current [CameraController] gets disposed of cleanly.
       _closeCamera();
     }
   }
@@ -100,33 +91,27 @@ class CameraViewState extends State<CameraView> with WidgetsBindingObserver {
   @override
   Widget build(BuildContext context) {
     // Get screen height and width (in logical pixels).
-    final double screenHeight = MediaQuery.of(context).size.height;
-    final double screenWidth = MediaQuery.of(context).size.width;
+    final screenHeight = MediaQuery.of(context).size.height;
+    final screenWidth = MediaQuery.of(context).size.width;
+    final topPadding = MediaQuery.of(context).viewPadding.top;
 
     // Define widget sizes which are scaled by the screen size.
-    final bottomBarHeight = screenHeight * 0.15;
-    final bottomBarWidth = screenWidth * 0.9;
-    final bottomBarOffset = screenHeight * 0.03;
-    final overlayOffset = 0.5 * (bottomBarOffset + bottomBarHeight);
-    final overlaySize = screenWidth * 0.7;
-
-    // Define Region Of Interest (ROI) based on camera overlay.
-    // It is expected that the user tries to place the Sudoku grid
-    // inside this region.
-    // Offset from center in [-height / 2, height / 2].
-    _roiOffset = -overlayOffset / screenHeight; // -0.09;
-    _roiSize = (1.0 + (overlaySize / screenWidth)) / 2;
+    final bottomBarHeight = screenHeight * 0.22;
+    final cameraWidgetHeight = screenHeight - bottomBarHeight - topPadding;
 
     // Main widget existing of the camera preview, the ROI indicator overlay,
     // the buttons for taking a picture, loading a picture from device storage,
     // and a button detecated for turining flash on/off.
     return Scaffold(
-      body: Stack(
-        children: <Widget>[
-          _getCameraWidget(screenHeight, screenWidth),
-          _getCameraOverlay(overlaySize, overlayOffset),
-          _getBottomBar(bottomBarHeight, bottomBarWidth, bottomBarOffset),
-        ],
+      backgroundColor: Colors.black,
+      body: Padding(
+        padding: EdgeInsets.only(top: topPadding),
+        child: Stack(
+          children: <Widget>[
+            _getCameraWidget(cameraWidgetHeight, screenWidth),
+            _getBottomBar(bottomBarHeight, screenWidth)
+          ],
+        ),
       ),
     );
   }
@@ -189,7 +174,7 @@ class CameraViewState extends State<CameraView> with WidgetsBindingObserver {
   }
 
   /// Initialize the camera.
-  Future<void> _initCamera({bool flashOn = false}) async {
+  Future<void> _initCamera() async {
     if (_isCameraInitialized || !_isCameraAccessGranted) return;
 
     // To display the current output from the Camera,
@@ -198,10 +183,7 @@ class CameraViewState extends State<CameraView> with WidgetsBindingObserver {
       // Get a specific camera from the list of available cameras.
       await camera,
       // Define the resolution to use.
-      // Better to use 1280x720 because the flutter camera plugin just
-      // doesn't recognize higher resolutions, even though the resulting
-      // image has the right resolution.
-      ResolutionPreset.high,
+      ResolutionPreset.max,
       // Audio not needed
       enableAudio: false,
       imageFormatGroup: ImageFormatGroup.jpeg,
@@ -214,26 +196,21 @@ class CameraViewState extends State<CameraView> with WidgetsBindingObserver {
       // Wait for initialization.
       await _initializeControllerFuture;
       _isCameraInitialized = true;
-      // Set initial flash mode.
-      await _controller!
-          .setFlashMode(flashOn ? FlashMode.torch : FlashMode.off);
-      _isFlashOn = flashOn;
+      _setFlash(false);
     } on CameraException catch (e) {
       // Ignore error, just move on.
       debugPrint("Error in _initCamera: $e.code\nError Message: $e.message");
     }
 
-    // Refresh page if mounted.
     if (mounted) setState(() {});
   }
 
   // Dispose of camera.
   Future<void> _closeCamera() async {
-    if (_isCameraInitialized) _controller?.dispose();
+    _controller?.dispose();
     _isCameraInitialized = false;
     _isFlashOn = false;
 
-    // Refresh page if mounted.
     if (mounted) setState(() {});
   }
 
@@ -241,15 +218,9 @@ class CameraViewState extends State<CameraView> with WidgetsBindingObserver {
   ///
   /// The goal is to fit the camera preview to the size of the widget.
   /// To fill out the whole widget - we don't want any black bars - we need
-  /// to crop the preview first. Depending on the aspect ratio of
-  /// the widget [widgetAspectRatio] and the camera [cameraAspectRatio],
-  /// the preview gets fitted eighter to its height or its width.
-  /// When fitting to its height we lose some pixels on both sides left/right.
-  /// When fitting to its width we lose some pixels at the top and de botttom.
+  /// to crop the preview first. When fitting to its width we lose some pixels
+  /// at the top and de botttom.
   Widget _getCameraWidget(double height, double width) {
-    // You must wait until the controller is initialized before displaying the
-    // camera preview. Use a FutureBuilder to display a loading spinner until the
-    // controller has finished initializing.
     return FutureBuilder<void>(
       future: _initializeControllerFuture,
       builder: (context, snapshot) {
@@ -261,33 +232,24 @@ class CameraViewState extends State<CameraView> with WidgetsBindingObserver {
           final cameraWidth = _controller!.value.previewSize!.height;
           final cameraHeight = _controller!.value.previewSize!.width;
 
-          // Get aspect ratios in landscape orientation.
+          // Get aspect ratio in landscape orientation.
           double cameraAspectRatio = cameraHeight / cameraWidth;
-          double widgetAspectRatio = height / width;
 
-          // Whether we have to fit the camera preview to its height
-          // or its width.
-          bool fitHeight = (widgetAspectRatio > cameraAspectRatio);
-          double actualWidth = fitHeight ? height / cameraAspectRatio : width;
-          double actualHeight = fitHeight ? height : width * cameraAspectRatio;
-
-          // Save cropped size of preview, which is displayed in this widget.
-          // Camera pixels != Widget pixels
-          _previewWidth =
-              fitHeight ? cameraHeight / widgetAspectRatio : cameraWidth;
-          _previewHeight =
-              fitHeight ? cameraHeight : cameraWidth * widgetAspectRatio;
+          // Size of the camera preview in logical pixels.
+          // camera pixels != widget (logical) pixels
+          double actualWidth = width;
+          double actualHeight = width * cameraAspectRatio;
 
           double focusCircleSize = width / 6;
 
-          return SizedBox(
-            width: width,
-            height: height,
-            child: ClipRect(
-              child: OverflowBox(
-                alignment: Alignment.center,
+          return Stack(children: [
+            SizedBox(
+              width: width,
+              height: height,
+              child: ClipRect(
                 child: FittedBox(
-                  fit: fitHeight ? BoxFit.fitHeight : BoxFit.fitWidth,
+                  alignment: Alignment.center,
+                  fit: BoxFit.fitWidth,
                   child: SizedBox(
                     width: actualWidth,
                     height: actualHeight,
@@ -324,9 +286,15 @@ class CameraViewState extends State<CameraView> with WidgetsBindingObserver {
                 ),
               ),
             ),
-          );
+            SizedBox(
+              width: width,
+              height: height,
+              child: Align(
+                  alignment: Alignment.center,
+                  child: _getCameraOverlay(width * _roiSize)),
+            )
+          ]);
         } else {
-          // Otherwise, display a loading indicator.
           return Container(color: Colors.black);
         }
       },
@@ -346,17 +314,6 @@ class CameraViewState extends State<CameraView> with WidgetsBindingObserver {
     Offset point = Offset(xp, yp);
     if (kDebugMode) debugPrint("tap focus point: $point");
 
-    try {
-      // Manually focus
-      await _controller!.setFocusPoint(point);
-      // Manually set light exposure
-      await _controller!.setExposurePoint(point);
-    } on CameraException catch (e) {
-      // Ignore error, just do nothing.
-      debugPrint(
-          "Error in _onToggleFlashButtonPressed: $e.code\nError Message: $e.message");
-    }
-
     if (mounted) {
       setState(() {
         _focusX = x;
@@ -369,90 +326,99 @@ class CameraViewState extends State<CameraView> with WidgetsBindingObserver {
         });
       });
     }
+
+    try {
+      await Future.wait([
+        // Manually set focus point
+        _controller!.setFocusPoint(point),
+        // Manually set light exposure
+        _controller!.setExposurePoint(point),
+      ]);
+    } on CameraException catch (e) {
+      // Ignore error, just do nothing.
+      debugPrint("Error in _onTapFocus: $e.code\nError Message: $e.message");
+    }
   }
 
   /// A widget indicating the ROI as an overlay.
   ///
   /// The overlay exists of four corner pieces forming a square.
-  Widget _getCameraOverlay(double size, double vOffset) {
+  Widget _getCameraOverlay(double size) {
     // Color and thickness of the overlay.
     const defaultLine = BorderSide(color: Colors.white, width: 3);
     // Size of a corner piece.
     final lineLength = size * 0.1;
-    return Center(
-      child: Padding(
-        padding: EdgeInsets.only(bottom: 2 * vOffset),
-        child: SizedBox(
-          height: size,
-          width: size,
-          child: Stack(
-            children: <Widget>[
-              Align(
-                alignment: Alignment.center,
-                // Display loading indicator while taking a picture.
-                child: _isTakingPicture
-                    ? const CircularProgressIndicator(
-                        color: Colors.white,
-                      )
-                    : Container(),
+    return SizedBox(
+      height: size,
+      width: size,
+      child: Stack(
+        children: <Widget>[
+          if (_isTakingPicture)
+            const Align(
+              alignment: Alignment.center,
+              // Display loading indicator while taking a picture.
+              child: CircularProgressIndicator(
+                color: Colors.white,
               ),
-              Align(
-                alignment: Alignment.topLeft,
-                child: _makeOverlayCorner(
-                  lineLength,
-                  top: defaultLine,
-                  left: defaultLine,
-                ),
-              ),
-              Align(
-                alignment: Alignment.topRight,
-                child: _makeOverlayCorner(
-                  lineLength,
-                  top: defaultLine,
-                  right: defaultLine,
-                ),
-              ),
-              Align(
-                alignment: Alignment.bottomLeft,
-                child: _makeOverlayCorner(
-                  lineLength,
-                  bottom: defaultLine,
-                  left: defaultLine,
-                ),
-              ),
-              Align(
-                alignment: Alignment.bottomRight,
-                child: _makeOverlayCorner(
-                  lineLength,
-                  bottom: defaultLine,
-                  right: defaultLine,
-                ),
-              )
-            ],
+            ),
+          Align(
+            alignment: Alignment.topLeft,
+            child: _makeOverlayCorner(
+              lineLength,
+              top: defaultLine,
+              left: defaultLine,
+            ),
           ),
-        ),
+          Align(
+            alignment: Alignment.topRight,
+            child: _makeOverlayCorner(
+              lineLength,
+              top: defaultLine,
+              right: defaultLine,
+            ),
+          ),
+          Align(
+            alignment: Alignment.bottomLeft,
+            child: _makeOverlayCorner(
+              lineLength,
+              bottom: defaultLine,
+              left: defaultLine,
+            ),
+          ),
+          Align(
+            alignment: Alignment.bottomRight,
+            child: _makeOverlayCorner(
+              lineLength,
+              bottom: defaultLine,
+              right: defaultLine,
+            ),
+          )
+        ],
       ),
     );
   }
 
   /// Helper function which creates corner pieces for the overlay widget.
-  Container _makeOverlayCorner(
+  Widget _makeOverlayCorner(
     double size, {
     BorderSide top = BorderSide.none,
     BorderSide bottom = BorderSide.none,
     BorderSide left = BorderSide.none,
     BorderSide right = BorderSide.none,
   }) {
-    return Container(
-      height: size,
-      width: size,
-      decoration: BoxDecoration(
-        shape: BoxShape.rectangle,
-        border: Border(
-          top: top,
-          bottom: bottom,
-          left: left,
-          right: right,
+    return IgnorePointer(
+      ignoring: true,
+      child: Container(
+        height: size,
+        width: size,
+        decoration: BoxDecoration(
+          shape: BoxShape.rectangle,
+          border: Border(
+            top: top,
+            bottom: bottom,
+            left: left,
+            right: right,
+          ),
         ),
       ),
     );
@@ -464,32 +430,25 @@ class CameraViewState extends State<CameraView> with WidgetsBindingObserver {
   ///  * A button for toggling the flash on/off.
   ///  * A button for taking a picture.
   ///  * A button to load an image from the devices storage.
-  Widget _getBottomBar(double height, double width, double offset) {
-    return Padding(
-      padding: EdgeInsets.only(bottom: offset),
-      child: Align(
-        alignment: Alignment.bottomCenter,
-        child: ClipRRect(
-          borderRadius: const BorderRadius.all(Radius.circular(40)),
-          child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-            child: Container(
-              height: height,
-              width: width,
-              color: Colors.black.withOpacity(0.1),
-              alignment: Alignment.center,
-              child: _getButtonRow(height, width),
-            ),
-          ),
+  Widget _getBottomBar(double height, double width) {
+    return Align(
+      alignment: Alignment.bottomCenter,
+      child: ClipRRect(
+        child: Container(
+          height: height,
+          width: width,
+          alignment: Alignment.topCenter,
+          child: _getButtonRow(width),
         ),
       ),
     );
   }
 
   /// Helper function creating the buttons for the buttom bar widget.
-  Widget _getButtonRow(double barHeight, double barWidth) {
+  Widget _getButtonRow(double size) {
     return Padding(
-      padding: EdgeInsets.symmetric(horizontal: barWidth * 0.07),
+      padding: EdgeInsets.only(
+          left: size * 0.08, right: size * 0.08, top: size * 0.08),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
@@ -501,12 +460,12 @@ class CameraViewState extends State<CameraView> with WidgetsBindingObserver {
             onPressed: _onToggleFlashButtonPressed,
             child: Icon(
               _isFlashOn ? Icons.flash_on : Icons.flash_off,
-              size: barHeight * 0.32,
+              size: size * 0.08,
             ),
           ),
           SizedBox(
-            height: barHeight * 0.7,
-            width: barHeight * 0.7,
+            height: size * 0.22,
+            width: size * 0.22,
             child: FloatingActionButton(
               heroTag: "TakePictureButton",
               foregroundColor: Colors.grey,
@@ -516,7 +475,7 @@ class CameraViewState extends State<CameraView> with WidgetsBindingObserver {
               onPressed: _onTakePictureButtonPressed,
               child: Icon(
                 Icons.circle,
-                size: barHeight * 0.65,
+                size: size * 0.21,
               ),
             ),
           ),
@@ -528,7 +487,7 @@ class CameraViewState extends State<CameraView> with WidgetsBindingObserver {
             onPressed: _onGalleryButtonPressed,
             child: Icon(
               Icons.image,
-              size: barHeight * 0.4,
+              size: size * 0.1,
             ),
           ),
         ],
@@ -538,12 +497,16 @@ class CameraViewState extends State<CameraView> with WidgetsBindingObserver {
 
   /// Callback function for handling ToggleFlashButton pressed events.
   void _onToggleFlashButtonPressed() async {
+    _setFlash(!_isFlashOn);
+  }
+
+  void _setFlash(flashOn) async {
     if (!_isCameraInitialized || _isTakingPicture) return;
 
     try {
       await _controller!
-          .setFlashMode(_isFlashOn ? FlashMode.off : FlashMode.torch);
-      _isFlashOn = !_isFlashOn;
+          .setFlashMode(flashOn ? FlashMode.torch : FlashMode.off);
+      _isFlashOn = flashOn;
     } on CameraException catch (e) {
       // Ignore error, just do nothing.
       debugPrint(
@@ -569,17 +532,24 @@ class CameraViewState extends State<CameraView> with WidgetsBindingObserver {
       // where it was saved.
       final image = await _controller!.takePicture();
 
+      // read image to get its resolution (we don't know it becauce camera preview resolution != image taken)
+      final buffer = await ImmutableBuffer.fromFilePath(image.path);
+      final descriptor = await ImageDescriptor.encoded(buffer);
+
       if (mounted) {
         setState(() {
           _isTakingPicture = false;
         });
       }
 
+      final imageWidth = descriptor.width;
+      final imageHeight = descriptor.height;
+
       // If the picture was taken, scan its content.
       widget.scanImage(
         image.path,
-        roiSize: (_roiSize * _previewWidth).toInt(),
-        roiOffset: (_roiOffset * _previewHeight).toInt(),
+        roiSize: (_roiSize * imageWidth).toInt(),
+        roiOffset: (0 * imageHeight).toInt(),
       );
     } on CameraException catch (e) {
       // TODO: error handling when taking picture fails
@@ -593,22 +563,17 @@ class CameraViewState extends State<CameraView> with WidgetsBindingObserver {
   void _onGalleryButtonPressed() async {
     if (_isTakingPicture) return;
 
+    _setFlash(false);
+
     try {
       // TODO: maybe implement transition stage which replaces Camera View
-      // Mark camera as disabled for App Lifecycle Observer, because
-      // opening Image Picker (Gallery) causes app to get paused/resumed.
-      _isCameraDisabled = true;
-
       final picker = ImagePicker();
       final image = await picker.pickImage(source: ImageSource.gallery);
 
       if (image != null) {
         widget.scanImage(image.path);
-      } else {
-        // Back button was pressed.
-        _isCameraDisabled = false;
-        if (!_isCameraInitialized) _initCamera(flashOn: _wasFlashOn);
       }
+      // Back button was pressed.
     } on PlatformException catch (e) {
       // TODO: error handling when picking image fails
       debugPrint(
